@@ -69,7 +69,8 @@ export const SAVE_PHRASES: string[] = [
   'guardar', 'salvar', 'confirmar', 'gravar', 'permitir seleção',
   'zapisz', 'zapisz ustawienia', 'potwierdź', 'potwierdź wybór', 'zapisz i zamknij', 'zezwól na wybrane',
   'opslaan', 'bevestigen', 'voorkeuren opslaan', 'selectie toestaan', 'keuze bevestigen',
-  'spara', 'bekräfta', 'spara inställningar', 'tillåt urval',
+  'spara', 'bekräfta', 'spara inställningar', 'tillåt urval', 'tillåt valda', 'godkänn valda', 'spara val',
+  'tillad udvalgte', 'tillad valgte', 'gem indstillinger', 'gem valg', 'tillat utvalgte', 'tillat valgte', 'lagre valg', 'salli valitut', 'hyväksy valitut', 'tallenna valinnat',
   'lagre', 'bekreft', 'gem', 'bekræft', 'tallenna', 'vahvista', 'salli valinta',
   'mentés', 'megerősítés', 'beállítások mentése', 'salvează', 'confirmă',
   'αποθήκευση', 'επιβεβαίωση', 'išsaugoti', 'patvirtinti', 'saglabāt', 'apstiprināt', 'salvesta', 'kinnita',
@@ -188,6 +189,7 @@ export const CATEGORY_WORDS: CategoryWords = {
     'personalização', 'personalizado', 'perfilagem',
     'personalizacja', 'spersonalizowane', 'profilowanie', 'preferencje',
     'personalisatie', 'gepersonaliseerd', 'profilering', 'voorkeuren', 'personalisering', 'anpassning', 'personointi', 'profilointi',
+    'præferencer', 'preferanser', 'inställningar', 'asetukset',
     'személyre szabás', 'personalizare', 'εξατομίκευση', 'personalizavimas', 'personalizācija', 'isikupärastamine', 'personalizacija', 'персонализация',
   ],
   functional: [

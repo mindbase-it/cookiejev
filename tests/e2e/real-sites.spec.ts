@@ -69,6 +69,17 @@ interface Row {
   debug?: unknown;
   /** Frames where the content script actually started. */
   injected?: unknown;
+  /** Playwright-side probe of every frame: what is really rendered where. */
+  frameProbe?: FrameProbe[];
+}
+
+interface FrameProbe {
+  url: string;
+  visible: boolean | null;
+  size: string;
+  text: string;
+  buttons: string[];
+  shadowHosts: number;
 }
 
 /** Runs inside the page: lists iframes and visible fixed/sticky containers with a text preview. */
@@ -131,6 +142,35 @@ test.describe('real sites survey', () => {
         const diag = await page.evaluate(pageDiagnostics).catch(() => ({ frames: [], overlays: [] }));
         const debug = await ext.debug(pattern).catch(() => null);
         const injected = await ext.frames(pattern).catch(() => []);
+        const frameProbe: FrameProbe[] = [];
+        for (const fr of page.frames()) {
+          try {
+            const probe = await fr.evaluate(() => {
+              const body = document.body;
+              const text = (body?.innerText || body?.textContent || '').replace(/\s+/g, ' ').trim();
+              const buttons = Array.from(document.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"]'))
+                .map((b) => ((b as HTMLElement).innerText || (b as HTMLInputElement).value || b.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim())
+                .filter(Boolean)
+                .slice(0, 12);
+              let shadowHosts = 0;
+              for (const el of Array.from(document.querySelectorAll('*')).slice(0, 5000)) if (el.shadowRoot) shadowHosts++;
+              const fe = window.frameElement as HTMLElement | null;
+              let visible: boolean | null = null;
+              let size = '';
+              if (fe) {
+                const r = fe.getBoundingClientRect();
+                const st = getComputedStyle(fe);
+                visible = r.width > 10 && r.height > 10 && st.display !== 'none' && st.visibility !== 'hidden';
+                size = `${Math.round(r.width)}x${Math.round(r.height)}`;
+              }
+              return { text: text.slice(0, 160), buttons, shadowHosts, visible, size };
+            });
+            if (probe.text.length > 0 || probe.buttons.length > 0) frameProbe.push({ url: fr.url().slice(0, 100), ...probe });
+          } catch {
+            /* cross-process / detached frame */
+          }
+          if (frameProbe.length >= 25) break;
+        }
         await page.screenshot({ path: `test-results/shots/${host}.png`, fullPage: false }).catch(() => undefined);
         row = {
           site,
@@ -143,6 +183,7 @@ test.describe('real sites survey', () => {
           overlays: diag.overlays,
           debug,
           injected,
+          frameProbe,
         };
       } catch (err) {
         row = { site, state: 'error', reason: String(err).slice(0, 120), ms: Date.now() - t0 };

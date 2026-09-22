@@ -192,3 +192,15 @@ describe('heuristicPlan — post-consent confirmation', () => {
     expect(heuristicPlan(snap([el('OK')], { round: 1, dialogText: 'We use cookies' }), settings())).toBeNull();
   });
 });
+
+describe('heuristicPlan — Danish Cookiebot template (dr.dk)', () => {
+  it('keeps unchecked categories off and clicks "Tillad udvalgte"', () => {
+    const nec = toggle('Nødvendige', true, { disabled: true });
+    const pref = toggle('Præferencer', false);
+    const stat = toggle('Statistik', false);
+    const allowAll = el('TILLAD ALLE');
+    const allowSel = el('TILLAD UDVALGTE');
+    const plan = heuristicPlan(snap([allowAll, allowSel, nec, pref, stat], { dialogText: 'DR indsamler oplysninger om dine besøg ved hjælp af cookies' }), settings());
+    expect(plan?.steps).toEqual([{ type: 'click', key: allowSel.key }]);
+  });
+});
