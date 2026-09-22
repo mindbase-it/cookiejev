@@ -101,3 +101,14 @@ describe('findCandidates in a button-only consent iframe (Seznam cmp.html)', () 
     expect(findCandidates(document, true)).toHaveLength(0);
   });
 });
+
+describe('findCandidates — consent teaser without controls', () => {
+  it('keeps a known CMP container (szn-cwl) as a candidate even when it has no buttons', () => {
+    document.body.innerHTML = `<szn-cwl></szn-cwl>`;
+    const sr = document.querySelector('szn-cwl')!.attachShadow({ mode: 'open' });
+    sr.innerHTML = `<div class="cwl-dialog"><h2>Abyste mohli pokračovat, potřebujeme vědět, jakou formou vám můžeme zobrazovat reklamu</h2><p>Než se rozhodnete, využíváme pouze nezbytné technické cookies.</p></div>`;
+    const cands = findCandidates(document, false);
+    expect(cands).toHaveLength(1);
+    expect(cands[0]!.cmpHint).toBe('seznam');
+  });
+});

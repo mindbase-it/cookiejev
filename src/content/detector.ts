@@ -66,6 +66,25 @@ function hasInteractive(root: Root): boolean {
   return deepQueryAll(root, INTERACTIVE_SELECTOR).some((el) => isElementVisible(el) || el instanceof HTMLInputElement);
 }
 
+/**
+ * A "teaser" container reacts to a click on itself (pointer cursor) and opens the real dialog —
+ * Seznam's consent wall strip has no controls at all. Such containers are still candidates.
+ */
+export function isClickableTeaser(root: Root): boolean {
+  const host = hostElement(root);
+  const first = root instanceof ShadowRoot
+    ? Array.from(root.children).find((c) => !['STYLE', 'SCRIPT', 'TEMPLATE', 'LINK'].includes(c.tagName))
+    : null;
+  try {
+    if (getComputedStyle(host).cursor === 'pointer') return true;
+    if (first && getComputedStyle(first).cursor === 'pointer') return true;
+    const inner = root.querySelector('[class*="dialog" i],[class*="banner" i],[class*="consent" i]');
+    return inner !== null && getComputedStyle(inner).cursor === 'pointer';
+  } catch {
+    return false;
+  }
+}
+
 /** Walks body descendants up to `maxDepth` levels and returns fixed/sticky positioned ones. */
 function fixedContainers(maxDepth = 4): Element[] {
   const out: Element[] = [];
@@ -106,7 +125,7 @@ function shadowCandidates(doc: Document): Candidate[] {
     const sr = el.shadowRoot;
     if (!sr || !(el instanceof HTMLElement)) continue;
     const interactive = deepQueryAll(sr, INTERACTIVE_SELECTOR).filter(isElementVisible);
-    if (interactive.length === 0) continue;
+    if (interactive.length === 0 && !isClickableTeaser(sr)) continue;
     const text = visibleText(sr);
     if (text.length < 20 || text.length > 30000 || !hasTopicWord(text)) continue;
     out.push({ root: sr, cmpHint: '' });
@@ -155,8 +174,11 @@ export function findCandidates(doc: Document = document, inFrame: boolean = wind
       if (seen.has(el)) continue;
       const root: Root = el.shadowRoot ?? el;
       const host = el;
-      if (!isElementVisible(host) && !(el.shadowRoot && deepQueryAll(el.shadowRoot, INTERACTIVE_SELECTOR).some(isElementVisible))) continue;
-      if (!hasInteractive(root)) continue;
+      const interactive = hasInteractive(root);
+      const shadowVisible = el.shadowRoot !== null && Array.from(el.shadowRoot.querySelectorAll('*')).some((n) => isElementVisible(n));
+      if (!isElementVisible(host) && !shadowVisible) continue;
+      // Known CMP containers count even without controls (consent teasers such as Seznam's strip).
+      if (!interactive && !isClickableTeaser(root) && cmpId !== 'seznam') continue;
       seen.add(el);
       out.push({ root, cmpHint: cmpId });
     }
