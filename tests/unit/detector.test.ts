@@ -84,3 +84,20 @@ describe('findCandidates — Seznam consent wall (szn-cwl)', () => {
     expect(cands[0]!.root).toBe(sr);
   });
 });
+
+describe('findCandidates in a button-only consent iframe (Seznam cmp.html)', () => {
+  it('accepts a frame whose buttons read like a consent bar even without cookie wording', () => {
+    document.body.innerHTML = `<div class="bar"><button>Souhlasím</button><button>Nastavení</button></div>`;
+    const cands = findCandidates(document, true);
+    expect(cands).toHaveLength(1);
+    expect(cands[0]!.root).toBe(document.body);
+  });
+  it('rejects a frame with unrelated buttons', () => {
+    document.body.innerHTML = `<div><button>Play</button><button>Mute</button></div>`;
+    expect(findCandidates(document, true)).toHaveLength(0);
+  });
+  it('rejects a frame with a lone OK button', () => {
+    document.body.innerHTML = `<div><button>OK</button></div>`;
+    expect(findCandidates(document, true)).toHaveLength(0);
+  });
+});

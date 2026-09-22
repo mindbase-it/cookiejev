@@ -1,5 +1,28 @@
 import { lightDomContainerSelectors } from '../engine/cmp-rules';
-import { hasTopicWord } from '../shared/keywords';
+import { scoreAgainst } from '../engine/heuristics';
+import { ACCEPT_PHRASES, MANAGE_PHRASES, REJECT_PHRASES, hasTopicWord, normalize } from '../shared/keywords';
+
+const ACCEPT_N = ACCEPT_PHRASES.map(normalize);
+const REJECT_N = REJECT_PHRASES.map(normalize);
+const MANAGE_N = MANAGE_PHRASES.map(normalize);
+
+function buttonLabel(el: Element): string {
+  if (el instanceof HTMLInputElement) return el.value || '';
+  return ((el as HTMLElement).innerText || el.textContent || el.getAttribute('aria-label') || '').replace(/s+/g, ' ').trim();
+}
+
+/**
+ * A small frame whose buttons read like a consent bar ("Souhlasím" + "Nastavení"/"Odmítnout") is a
+ * consent frame even without cookie wording: CMPs like Seznam keep the text in the parent page and
+ * only the buttons in a cross-origin iframe.
+ */
+function looksLikeConsentButtonBar(buttons: Element[]): boolean {
+  if (buttons.length < 2 || buttons.length > 8) return false;
+  const labels = buttons.map(buttonLabel).filter(Boolean);
+  const accept = labels.some((l) => scoreAgainst(l, ACCEPT_N) >= 0.9);
+  const rejectOrManage = labels.some((l) => scoreAgainst(l, REJECT_N) >= 0.9 || scoreAgainst(l, MANAGE_N) >= 0.9);
+  return accept && rejectOrManage;
+}
 import { type Root, deepQueryAll, elementArea, hostElement, isElementVisible, viewportArea, visibleText } from './dom-utils';
 
 export interface Candidate {
@@ -98,9 +121,11 @@ function frameBodyCandidate(doc: Document): Candidate | null {
   const body = doc.body;
   if (!body) return null;
   const text = visibleText(body);
-  if (text.length < 20 || text.length > 30000 || !hasTopicWord(text)) return null;
+  if (text.length > 30000) return null;
   const buttons = deepQueryAll(body, 'button,[role="button"],input[type="button"],input[type="submit"],a[href]').filter(isElementVisible);
   if (buttons.length === 0) return null;
+  const topical = text.length >= 20 && hasTopicWord(text);
+  if (!topical && !looksLikeConsentButtonBar(buttons)) return null;
   return { root: body, cmpHint: '' };
 }
 
