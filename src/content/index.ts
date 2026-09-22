@@ -133,6 +133,8 @@ async function handleDialog(state: PageState): Promise<boolean> {
       if (e) clickedThisDialog.add(`${e.kind}|${e.text}|${e.id}`);
     }
     lastSource = { state: 'handled', source: plan.source, confidence: plan.confidence, rounds: state.rounds, reason: plan.reason };
+    // Report right away: CMPs often remove this frame the moment consent is saved, killing the script.
+    if (exec.clicked.length > 0 || exec.toggled.length > 0) await report(lastSource);
 
     await sleep(SETTLE_MS);
     const stillVisible = host.isConnected && isElementVisible(host);
