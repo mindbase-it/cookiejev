@@ -158,8 +158,13 @@ test.describe('real sites survey', () => {
               for (const el of Array.from(document.querySelectorAll('*')).slice(0, 5000)) {
                 if (!el.shadowRoot) continue;
                 shadowHosts++;
-                const st = (el.shadowRoot.textContent || '').replace(/s+/g, ' ').trim();
-                if (st) shadowTexts.push(`${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}: ${st.slice(0, 140)}`);
+                const clone = document.createElement('div');
+                clone.innerHTML = el.shadowRoot.innerHTML;
+                clone.querySelectorAll('style,script,template,svg').forEach((n) => n.remove());
+                const st = (clone.textContent || '').replace(/s+/g, ' ').trim();
+                const hr = (el as HTMLElement).getBoundingClientRect();
+                const html = clone.innerHTML.replace(/s+/g, ' ').slice(0, 1200);
+                if (st) shadowTexts.push(`${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''} [host ${Math.round(hr.width)}x${Math.round(hr.height)}]: ${st.slice(0, 200)} || HTML: ${html}`);
               }
               const fe = window.frameElement as HTMLElement | null;
               let visible: boolean | null = null;
