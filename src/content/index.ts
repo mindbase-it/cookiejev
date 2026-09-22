@@ -27,13 +27,39 @@ interface PageState {
   attempts: number;
 }
 
+/**
+ * Hostname of the page this frame belongs to. Consent dialogs are often rendered in about:blank /
+ * srcdoc iframes (Seznam CMP), where location.hostname is empty; fall back to the parent origin.
+ */
+export function pageHostname(): string {
+  if (location.hostname) return location.hostname;
+  try {
+    const anc = (location as Location & { ancestorOrigins?: DOMStringList }).ancestorOrigins;
+    if (anc && anc.length > 0) return new URL(anc[anc.length - 1]!).hostname;
+  } catch {
+    /* ignore */
+  }
+  try {
+    if (document.referrer) return new URL(document.referrer).hostname;
+  } catch {
+    /* ignore */
+  }
+  return '';
+}
+
+function isWebFrame(): boolean {
+  if (location.protocol.startsWith('http')) return true;
+  // about:blank / srcdoc / blob frames created by a web page (match_origin_as_fallback).
+  return (location.protocol === 'about:' || location.protocol === 'blob:') && pageHostname() !== '';
+}
+
 function log(...args: unknown[]): void {
   if (process.env.NODE_ENV !== 'production') console.debug('[cookiejev]', ...args);
 }
 
 async function report(status: TabStatus, planKey?: string): Promise<void> {
   try {
-    await sendToBackground({ type: 'report', hostname: location.hostname, status, ...(planKey ? { planKey } : {}) });
+    await sendToBackground({ type: 'report', hostname: pageHostname(), status, ...(planKey ? { planKey } : {}) });
   } catch {
     /* extension context gone */
   }
@@ -79,7 +105,7 @@ async function handleDialog(state: PageState): Promise<boolean> {
 
     let res: DecideResponse;
     try {
-      res = await sendToBackground<DecideResponse>({ type: 'decide', hostname: location.hostname, snapshot });
+      res = await sendToBackground<DecideResponse>({ type: 'decide', hostname: pageHostname(), snapshot });
     } catch (err) {
       log('decide failed', err);
       return false;
@@ -144,7 +170,7 @@ async function handleDialog(state: PageState): Promise<boolean> {
 function main(): void {
   if (window.__cookiejevLoaded) return;
   window.__cookiejevLoaded = true;
-  if (!location.protocol.startsWith('http')) return;
+  if (!isWebFrame()) return;
 
   const state: PageState = { busy: false, done: false, clicked: new Set(), rounds: 0, attempts: 0 };
   let timer: number | undefined;
@@ -191,7 +217,7 @@ function main(): void {
   void (async () => {
     let enabled = true;
     try {
-      enabled = await sendToBackground<boolean>({ type: 'is-host-enabled', hostname: location.hostname });
+      enabled = await sendToBackground<boolean>({ type: 'is-host-enabled', hostname: pageHostname() });
     } catch {
       enabled = false;
     }

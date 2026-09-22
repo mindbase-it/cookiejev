@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="cs">
+<head><meta charset="utf-8"><title>Banner in about:blank iframe (Seznam-like)</title>
+<style>
+  #cmp-frame { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 720px; height: 220px; border: 0; z-index: 99999; }
+</style></head>
+<body>
+<h1>Portál</h1>
+<p>Obsah stránky.</p>
+<script>
+  // Seznam CMP style: an iframe with about:blank src, content written by script.
+  const f = document.createElement('iframe');
+  f.id = 'cmp-frame';
+  f.src = 'about:blank?' + Math.random();
+  document.body.appendChild(f);
+  const d = f.contentDocument;
+  d.open();
+  d.write(`<!doctype html><html lang="cs"><body style="margin:0;font-family:sans-serif">
+    <div style="background:#fff;border:1px solid #ccc;padding:20px;height:100%;box-sizing:border-box">
+      <h2>Abyste mohli pokračovat, potřebujeme vědět, jakou formou vám můžeme zobrazovat reklamu</h2>
+      <p>Než se rozhodnete, využíváme pouze nezbytné technické cookies.</p>
+      <button id="agree">Souhlasím</button>
+      <button id="reject">Odmítnout vše</button>
+      <button id="settings">Nastavení</button>
+    </div></body></html>`);
+  d.close();
+  const done = (r) => { document.body.setAttribute('data-result', r); f.remove(); };
+  d.getElementById('agree').onclick = () => done('accepted');
+  d.getElementById('reject').onclick = () => done('rejected');
+  d.getElementById('settings').onclick = () => done('settings');
+</script>
+</body>
+</html>

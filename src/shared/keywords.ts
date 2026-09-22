@@ -116,6 +116,18 @@ export const ACCEPT_PHRASES: string[] = [
   'prihvati sve', 'prihvaćam', 'sprejmi vse', 'sprejmem', 'приемам всички', 'приемам', 'разбирам',
 ];
 
+/**
+ * Words marking a "consent or pay" path (subscribe, pay, price). Buttons containing them are never
+ * clicked: a reject that costs money is not a reject.
+ */
+export const PAY_WORDS: string[] = [
+  'pay', 'paid', 'payer', 'zahlen', 'bezahlen', 'pagar', 'pagare', 'zapłacić', 'zapłać', 'zaplatit', 'zaplatiť', 'betalen', 'betala', 'betale',
+  'maksaa', 'fizet', 'plăti', 'subscribe', 'subscription', 'abo', 'abonnement', 'abonament', 'abbonamento', 'suscripción', 'assinatura',
+  'předplatné', 'predplatné', 'prenumerata', 'előfizetés', 'premium', 'pur', 'acquista', 'kaufen', 'buy', 'koupit', 'kúpiť', 'kup', 'acheter', 'comprar',
+  '€', 'eur', 'kč', 'czk', 'zł', 'pln', 'usd', '$', '£', 'chf', 'sek', 'nok', 'dkk', 'huf', 'ft', 'ron',
+  '/měsíc', '/mesiac', '/month', '/monat', '/mois', '/mese', '/mes', '/rok', '/year', '/jahr', '/an', '/anno', '/año', 'per month', 'pro monat', 'měsíčně', 'monatlich', 'mensuel', 'annuo', 'anno',
+];
+
 export interface CategoryWords {
   necessary: string[];
   analytics: string[];

@@ -88,6 +88,14 @@ test.describe('with OpenJev mock available', () => {
     await page.close();
   });
 
+  test('banner inside an about:blank iframe (Seznam-like) is rejected', async () => {
+    const page = await ext.context.newPage();
+    await page.goto(`${FIXTURES}/iframe-blank.html`);
+    await expect(page.locator('body')).toHaveAttribute('data-result', 'rejected', { timeout: 15_000 });
+    await expect.poll(() => ext.tabStatus(`${FIXTURES}/iframe-blank.html`)).toMatchObject({ state: 'handled' });
+    await page.close();
+  });
+
   test('newsletter modal is left alone', async () => {
     const page = await ext.context.newPage();
     await page.goto(`${FIXTURES}/no-banner.html`);

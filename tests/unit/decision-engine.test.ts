@@ -130,3 +130,16 @@ describe('DecisionEngine tiering', () => {
     ]);
   });
 });
+
+describe('DecisionEngine rounds', () => {
+  it('skips the consent-topic check after round 1 (settings panes rarely mention cookies)', async () => {
+    const { engine: e } = engine(null);
+    const t = toggle('Wykorzystywanie ograniczonych danych do wyboru reklam', true);
+    const save = el('Zapisz');
+    const out = await e.decide({ hostname: 'onet.pl', snapshot: snap([t, save], { round: 2, dialogText: 'Cele przetwarzania danych przez Wydawcę' }), settings: settings() });
+    expect(out.plan?.steps).toEqual([
+      { type: 'setToggle', key: t.key, on: false },
+      { type: 'click', key: save.key },
+    ]);
+  });
+});

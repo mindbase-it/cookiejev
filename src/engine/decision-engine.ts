@@ -70,7 +70,8 @@ export class DecisionEngine {
     }
 
     // Generic dialogs must at least look like consent before we spend a model call.
-    if (!looksLikeConsentDialog(snapshot)) {
+    // Later rounds belong to a flow that already passed this check (settings panes rarely say "cookie").
+    if (snapshot.round <= 1 && !looksLikeConsentDialog(snapshot)) {
       return { plan: null, planKey: key, reason: 'not-consent' };
     }
 

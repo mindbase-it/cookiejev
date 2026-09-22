@@ -2,6 +2,7 @@ import {
   ACCEPT_PHRASES,
   CATEGORY_WORDS,
   MANAGE_PHRASES,
+  PAY_WORDS,
   REJECT_PHRASES,
   SAVE_PHRASES,
   hasTopicWord,
@@ -62,8 +63,19 @@ export interface IntentScores {
   accept: number;
 }
 
+const PAY_NORMALIZED = PAY_WORDS.map(normalize).filter(Boolean);
+
+/** True when a control label mentions paying / subscribing / a price. */
+export function mentionsPayment(label: string): boolean {
+  const raw = label.toLowerCase();
+  if (/[€$£]|\d+[.,]\d{2}\s*(kč|czk|zł|pln|eur|usd|chf|ft|huf|sek|nok|dkk|ron)/u.test(raw)) return true;
+  const t = normalize(label);
+  return PAY_NORMALIZED.some((w) => containsWholePhrase(t, w));
+}
+
 export function scoreIntents(el: SnapshotElement): IntentScores {
   const label = elementLabel(el);
+  if (mentionsPayment(label)) return { reject: 0, save: 0, manage: 0, accept: 0 };
   const penalty = el.kind === 'link' ? 0.9 : 1;
   return {
     reject: scoreAgainst(label, NORMALIZED.reject) * penalty,

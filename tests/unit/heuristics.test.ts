@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { classifyCategory, classifyIntent, heuristicPlan, looksLikeConsentDialog, scoreAgainst } from '../../src/engine/heuristics';
+import { classifyCategory, classifyIntent, heuristicPlan, looksLikeConsentDialog, mentionsPayment, scoreAgainst } from '../../src/engine/heuristics';
 import { normalize } from '../../src/shared/keywords';
 import { el, resetKeys, settings, snap, toggle } from './helpers';
 
@@ -161,5 +161,22 @@ describe('heuristicPlan — Polish wording (wp.pl / onet.pl)', () => {
     const s = snap([el('PRZEJDŹ DO SERWISU'), el('USTAWIENIA ZAAWANSOWANE')], { dialogText: 'Klikając „Przejdź do serwisu” udzielasz zgody na przetwarzanie Twoich danych osobowych' });
     expect(looksLikeConsentDialog(s)).toBe(true);
     expect(heuristicPlan(s, settings())?.expectMoreRounds).toBe(true);
+  });
+});
+
+describe('heuristicPlan — consent-or-pay walls', () => {
+  it('never clicks buttons that cost money, even when they say "reject"', () => {
+    const accept = el('Akceptuję i przechodzę do serwisu');
+    const pay = el('Nadal odrzucam, chcę zapłacić');
+    expect(heuristicPlan(snap([accept, pay], { dialogText: 'Cenimy Twoją prywatność.' }), settings())).toBeNull();
+    const buy = el('ACQUISTA A €14,99/ANNO');
+    const consentless = el('Accesso Consentless');
+    expect(heuristicPlan(snap([buy, consentless], { dialogText: 'uso dei cookie' }), settings())).toBeNull();
+  });
+  it('mentionsPayment detects prices and subscription words', () => {
+    expect(mentionsPayment('Weiter mit PUR-Abo')).toBe(true);
+    expect(mentionsPayment('Jen 39 Kč měsíčně')).toBe(true);
+    expect(mentionsPayment('Reject all')).toBe(false);
+    expect(mentionsPayment('Pouze nezbytné')).toBe(false);
   });
 });
