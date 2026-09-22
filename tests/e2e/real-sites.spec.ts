@@ -176,7 +176,7 @@ test.describe('real sites survey', () => {
                 visible = r.width > 10 && r.height > 10 && st.display !== 'none' && st.visibility !== 'hidden';
                 size = `${Math.round(r.width)}x${Math.round(r.height)}`;
               }
-              const cmpLike = /cmp|consent|privacy|cookie|gdpr/i.test(location.href);
+              const cmpLike = /cmp|consent|privacy|cookie|gdpr/i.test(location.href) || (location.protocol === 'about:' && buttons.length > 0);
               let bodyHtml = '';
               if (cmpLike && body) {
                 const clone = body.cloneNode(true) as HTMLElement;
@@ -186,7 +186,7 @@ test.describe('real sites survey', () => {
               return { text: text.slice(0, 160), buttons, shadowHosts, shadowTexts: shadowTexts.slice(0, 5), visible, size, bodyHtml };
             });
             const consentish = /cookie|consent|souhlas|zgod|gdpr|privacy|soukrom/i.test(probe.text + ' ' + probe.shadowTexts.join(' '));
-            const cmpUrl = /cmp|consent|privacy|cookie|gdpr/i.test(fr.url());
+            const cmpUrl = /cmp|consent|privacy|cookie|gdpr/i.test(fr.url()) || (fr.url().startsWith('about:') && probe.buttons.length > 0);
             if (consentish || cmpUrl || probe.shadowHosts > 0 || fr === page.mainFrame()) frameProbe.push({ url: fr.url().slice(0, 100), ...probe });
           } catch {
             /* cross-process / detached frame */

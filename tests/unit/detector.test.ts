@@ -87,7 +87,7 @@ describe('findCandidates — Seznam consent wall (szn-cwl)', () => {
 
 describe('findCandidates in a button-only consent iframe (Seznam cmp.html)', () => {
   it('accepts a frame whose buttons read like a consent bar even without cookie wording', () => {
-    document.body.innerHTML = `<div class="bar"><button>Souhlasím</button><button>Nastavení</button></div>`;
+    document.body.innerHTML = `<div class="bar"><button>Souhlasím</button><button>Podrobné nastavení</button></div>`;
     const cands = findCandidates(document, true);
     expect(cands).toHaveLength(1);
     expect(cands[0]!.root).toBe(document.body);

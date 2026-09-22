@@ -21,7 +21,8 @@ function looksLikeConsentButtonBar(buttons: Element[]): boolean {
   if (buttons.length < 2 || buttons.length > 8) return false;
   const labels = buttons.map(buttonLabel).filter(Boolean);
   const accept = labels.some((l) => scoreAgainst(l, ACCEPT_N) >= 0.9);
-  const rejectOrManage = labels.some((l) => scoreAgainst(l, REJECT_N) >= 0.9 || scoreAgainst(l, MANAGE_N) >= 0.9);
+  // "Podrobné nastavení" (detailed settings) only partially matches "nastavení": accept partial matches here.
+  const rejectOrManage = labels.some((l) => scoreAgainst(l, REJECT_N) >= 0.7 || scoreAgainst(l, MANAGE_N) >= 0.7);
   return accept && rejectOrManage;
 }
 
