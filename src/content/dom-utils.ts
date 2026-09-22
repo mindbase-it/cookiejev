@@ -44,10 +44,24 @@ export function collapseWhitespace(text: string): string {
   return text.replace(/\s+/g, ' ').trim();
 }
 
+/** Text of an element or shadow root without <style>/<script> contents (textContent would include them). */
 export function visibleText(root: Root): string {
-  const host = hostElement(root);
-  const raw = root instanceof ShadowRoot ? root.textContent ?? '' : ((host as HTMLElement).innerText ?? host.textContent ?? '');
-  return collapseWhitespace(raw);
+  if (root instanceof ShadowRoot) {
+    const parts: string[] = [];
+    for (const child of Array.from(root.children)) {
+      if (['STYLE', 'SCRIPT', 'TEMPLATE', 'LINK'].includes(child.tagName)) continue;
+      parts.push((child as HTMLElement).innerText ?? textWithoutStyles(child));
+    }
+    return collapseWhitespace(parts.join(' '));
+  }
+  const host = root as HTMLElement;
+  return collapseWhitespace(host.innerText ?? textWithoutStyles(host));
+}
+
+function textWithoutStyles(el: Element): string {
+  const clone = el.cloneNode(true) as Element;
+  clone.querySelectorAll('style,script,template').forEach((n) => n.remove());
+  return clone.textContent ?? '';
 }
 
 export function elementArea(el: Element): number {

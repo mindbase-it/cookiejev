@@ -70,3 +70,17 @@ describe('findCandidates in an iframe', () => {
     expect(findCandidates(document, false)).toHaveLength(0);
   });
 });
+
+describe('findCandidates — Seznam consent wall (szn-cwl)', () => {
+  it('finds the dialog although the shadow root starts with a huge <style> block', () => {
+    document.body.innerHTML = `<div id="app"><p>Seznam homepage</p></div><szn-cwl></szn-cwl>`;
+    const host = document.querySelector('szn-cwl')!;
+    const sr = host.attachShadow({ mode: 'open' });
+    const css = '.cwl-dialog { cursor: pointer; box-sizing: border-box; } '.repeat(1500); // ~70 kB of CSS
+    sr.innerHTML = `<style>${css}</style><div class="cwl-dialog"><h2>Abyste mohli pokračovat, potřebujeme vědět, jakou formou vám můžeme zobrazovat reklamu</h2><p>Než se rozhodnete, využíváme pouze nezbytné technické cookies.</p><button>Souhlasím</button><button>Nastavení</button></div>`;
+    const cands = findCandidates(document, false);
+    expect(cands).toHaveLength(1);
+    expect(cands[0]!.cmpHint).toBe('seznam');
+    expect(cands[0]!.root).toBe(sr);
+  });
+});

@@ -180,7 +180,7 @@ export const CMP_RULES: CmpRule[] = [
   },
   {
     id: 'seznam',
-    containerSelectors: ['#szn-cmp-dialog-container', 'szn-cmp-dialog', '.szn-cmp-dialog-container'],
+    containerSelectors: ['szn-cwl', '#szn-cmp-dialog-container', 'szn-cmp-dialog', '.szn-cmp-dialog-container'],
     shadow: true,
     reject: [{ labelIn: ['odmítnout vše', 'odmítnout', 'nesouhlasím', 'pouze nezbytné'] }],
     manage: [{ labelIn: ['nastavení', 'podrobné nastavení', 'upravit nastavení', 'nastavit'] }],
