@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="cs">
+<head><meta charset="utf-8"><title>Consent teaser (Seznam-like)</title>
+<style>
+  #dialog { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 10000; }
+  #dialog.open { display: flex; align-items: center; justify-content: center; }
+  #dialog .box { background: #fff; padding: 24px; width: 480px; }
+</style></head>
+<body>
+<h1>Portál</h1>
+<p>Obsah stránky.</p>
+<szn-cwl></szn-cwl>
+<div id="dialog"><div class="box">
+  <h2>Nastavení souhlasu s cookies</h2>
+  <p>Vyberte, jak můžeme používat cookies.</p>
+  <button id="agree" onclick="done('accepted')">Souhlasím</button>
+  <button id="reject" onclick="done('rejected')">Odmítnout vše</button>
+  <button id="settings" onclick="done('settings')">Podrobné nastavení</button>
+</div></div>
+<script>
+  class Cwl extends HTMLElement {
+    connectedCallback() {
+      const sr = this.attachShadow({ mode: 'open' });
+      sr.innerHTML = '<style>.cwl-dialog{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:640px;background:#fff;border:1px solid #ccc;padding:20px;cursor:pointer;z-index:9999}</style>'
+        + '<div class="cwl-dialog"><div class="cwl-dialog-inner-bg">'
+        + '<h2 class="cwl-dialog-headline">Abyste mohli pokračovat, potřebujeme vědět, jakou formou vám můžeme zobrazovat reklamu</h2>'
+        + '<p class="cwl-dialog-legal-notice">Než se rozhodnete, využíváme pouze nezbytné technické cookies.</p>'
+        + '</div></div>';
+      this.addEventListener('click', () => { this.remove(); document.getElementById('dialog').classList.add('open'); });
+    }
+  }
+  customElements.define('szn-cwl', Cwl);
+  function done(r) { document.body.setAttribute('data-result', r); document.getElementById('dialog').classList.remove('open'); }
+</script>
+</body>
+</html>

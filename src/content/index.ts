@@ -25,6 +25,33 @@ interface PageState {
   clicked: Set<string>;
   rounds: number;
   attempts: number;
+  /** A consent "teaser" (strip without controls, e.g. Seznam's szn-cwl) was clicked to open the real dialog. */
+  teaserClicked: boolean;
+}
+
+/** First rendered element inside the candidate (skipping <style>), or the host itself. */
+function teaserTarget(cand: Candidate): Element {
+  const root = cand.root;
+  if (root instanceof ShadowRoot) {
+    const first = Array.from(root.children).find((c) => !['STYLE', 'SCRIPT', 'TEMPLATE', 'LINK'].includes(c.tagName));
+    return first ?? root.host;
+  }
+  return root;
+}
+
+/**
+ * Consent teaser: a candidate with consent wording but no controls that reacts to a click by opening
+ * the real dialog (Seznam's consent wall does exactly this). Known via CMP rule or a pointer cursor.
+ */
+function isTeaser(cand: Candidate): boolean {
+  if (cand.cmpHint === 'seznam') return true;
+  const target = teaserTarget(cand);
+  const host = hostElement(cand.root);
+  try {
+    return getComputedStyle(target).cursor === 'pointer' || getComputedStyle(host).cursor === 'pointer';
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -97,7 +124,24 @@ async function handleDialog(state: PageState): Promise<boolean> {
   while (state.rounds < MAX_ROUNDS) {
     state.rounds++;
     const { snapshot, map } = buildSnapshot(cand.root, cand.cmpHint, state.rounds);
-    if (snapshot.elements.length === 0) break;
+    if (snapshot.elements.length === 0) {
+      if (state.rounds === 1 && !state.teaserClicked && isTeaser(cand)) {
+        state.teaserClicked = true;
+        log('clicking consent teaser', cand.cmpHint);
+        dispatchClick(teaserTarget(cand));
+        await sleep(SETTLE_MS);
+        const opened = findCandidates().find((c) => buildSnapshot(c.root, c.cmpHint, 1).snapshot.elements.length > 0);
+        if (opened) {
+          cand.root = opened.root;
+          cand.cmpHint = opened.cmpHint;
+          state.rounds = 0;
+          continue;
+        }
+        // The real dialog probably opened in another frame; that frame's script will handle it.
+        return false;
+      }
+      break;
+    }
     // Element keys are per snapshot; exclude by label so earlier clicks are remembered across rounds.
     const excludeKeys = snapshot.elements.filter((e) => clickedThisDialog.has(`${e.kind}|${e.text}|${e.id}`)).map((e) => e.key);
     // Encode exclusions into the snapshot by marking those elements disabled.
@@ -174,7 +218,7 @@ function main(): void {
   window.__cookiejevLoaded = true;
   if (!isWebFrame()) return;
 
-  const state: PageState = { busy: false, done: false, clicked: new Set(), rounds: 0, attempts: 0 };
+  const state: PageState = { busy: false, done: false, clicked: new Set(), rounds: 0, attempts: 0, teaserClicked: false };
   let timer: number | undefined;
   let poll: number | undefined;
   let observer: MutationObserver | null = null;

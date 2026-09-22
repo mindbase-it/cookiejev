@@ -101,6 +101,14 @@ test.describe('with OpenJev mock available', () => {
     await page.close();
   });
 
+  test('consent teaser (Seznam-like szn-cwl strip) is clicked open, then rejected', async () => {
+    const page = await ext.context.newPage();
+    await page.goto(`${FIXTURES}/teaser-consent.html`);
+    await expect(page.locator('body')).toHaveAttribute('data-result', 'rejected', { timeout: 15_000 });
+    await expect.poll(() => ext.tabStatus(`${FIXTURES}/teaser-consent.html`)).toMatchObject({ state: 'handled' });
+    await page.close();
+  });
+
   test('newsletter modal is left alone', async () => {
     const page = await ext.context.newPage();
     await page.goto(`${FIXTURES}/no-banner.html`);
