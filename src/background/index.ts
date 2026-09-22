@@ -89,6 +89,20 @@ async function handleDecide(hostname: string, snapshot: Parameters<DecisionEngin
   }
   const exclude = new Set(snapshot.elements.filter((e) => e.disabled).map((e) => e.key));
   const out = await engine.decide({ hostname, snapshot, settings, exclude });
+  if (tabId !== undefined) {
+    // Diagnostics for the popup/survey: what the engine saw and decided (session-only, per tab).
+    const debug = {
+      hostname,
+      cmpHint: snapshot.cmpHint,
+      round: snapshot.round,
+      lang: snapshot.lang,
+      dialogText: snapshot.dialogText.slice(0, 300),
+      elements: snapshot.elements.map((e) => `${e.key}:${e.kind}${e.checked === undefined ? '' : e.checked ? '[x]' : '[ ]'}${e.disabled ? '(dis)' : ''} "${e.text || e.ariaLabel}"${e.id ? ' #' + e.id : ''}`),
+      reason: out.reason,
+      plan: out.plan ? out.plan.steps : null,
+    };
+    await chrome.storage.session.set({ [`debug:${tabId}`]: debug }).catch(() => undefined);
+  }
   if (out.plan) return { ok: true, plan: out.plan, planKey: out.planKey };
   return { ok: true, plan: null, planKey: out.planKey, reason: out.reason };
 }
@@ -134,9 +148,9 @@ chrome.runtime.onMessage.addListener((msg: Request, sender, sendResponse) => {
       case 'report': {
         const s = await loadSettings();
         if (tabId !== undefined) {
-          // Do not let a "not-consent" from a sub-frame overwrite a "handled" from the main frame.
+          // A sub-frame saying "not-consent" must not overwrite a real result from another frame.
           const prev = await getStatus(tabId);
-          if (!(prev.state === 'handled' && msg.status.state !== 'handled')) await setStatus(tabId, msg.status, s);
+          if (!(prev.state !== 'idle' && msg.status.state === 'not-consent')) await setStatus(tabId, msg.status, s);
         }
         if (msg.status.state === 'failed' && msg.planKey) await engine.invalidate(msg.planKey);
         return { ok: true };
@@ -162,7 +176,7 @@ chrome.runtime.onMessage.addListener((msg: Request, sender, sendResponse) => {
 chrome.tabs.onUpdated.addListener((tabId, info) => {
   if (info.status === 'loading') {
     tabStatus.delete(tabId);
-    void chrome.storage.session.remove(`tab:${tabId}`).catch(() => undefined);
+    void chrome.storage.session.remove([`tab:${tabId}`, `debug:${tabId}`]).catch(() => undefined);
     void chrome.action.setBadgeText({ tabId, text: '' }).catch(() => undefined);
   }
 });

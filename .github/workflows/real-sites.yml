@@ -27,3 +27,4 @@ jobs:
           path: |
             test-results/real-sites.json
             test-results/real-sites.md
+            test-results/shots/

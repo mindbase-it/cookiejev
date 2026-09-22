@@ -17,9 +17,15 @@ export interface ExtensionSession {
   tabStatus(urlPattern: string): Promise<unknown>;
   /** Last OpenJev error recorded by the service worker (null when the last call succeeded / none made). */
   openjevError(): Promise<string | null>;
+  /** Engine diagnostics for the tab matching urlPattern (last snapshot + decision). */
+  debug(urlPattern: string): Promise<unknown>;
 }
 
-export async function launchExtension(settings: Partial<Settings> = {}): Promise<ExtensionSession> {
+export interface LaunchOptions {
+  locale?: string;
+}
+
+export async function launchExtension(settings: Partial<Settings> = {}, opts: LaunchOptions = {}): Promise<ExtensionSession> {
   const dist = path.resolve('dist');
   const userDataDir = await mkdtemp(path.join(os.tmpdir(), 'cookiejev-e2e-'));
   // Full Chromium (required for extensions) can take minutes to cold-start on Windows (AV scan of the binary).
@@ -27,6 +33,7 @@ export async function launchExtension(settings: Partial<Settings> = {}): Promise
     channel: 'chromium',
     headless: true,
     timeout: 300_000,
+    ...(opts.locale ? { locale: opts.locale } : {}),
     args: [`--disable-extensions-except=${dist}`, `--load-extension=${dist}`],
   });
   let [worker] = context.serviceWorkers();
@@ -61,12 +68,22 @@ export async function launchExtension(settings: Partial<Settings> = {}): Promise
       return (r['openjev:lastError'] as string | null | undefined) ?? null;
     });
 
+  const debug = async (urlPattern: string) =>
+    worker.evaluate(async (pattern) => {
+      const tabs = await chrome.tabs.query({ url: pattern });
+      const id = tabs[0]?.id;
+      if (id === undefined) return null;
+      const r = await chrome.storage.session.get(`debug:${id}`);
+      return r[`debug:${id}`] ?? null;
+    }, urlPattern);
+
   return {
     context,
     worker,
     setSettings,
     tabStatus,
     openjevError,
+    debug,
     async close() {
       await context.close();
       await rm(userDataDir, { recursive: true, force: true }).catch(() => undefined);

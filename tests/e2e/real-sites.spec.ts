@@ -1,13 +1,14 @@
 /**
  * Broad real-world survey: loads the built extension into Chromium, visits real EU sites and
- * records per site what the extension reported. Runs only with REAL_SITES=1 (network access,
- * non-deterministic). Produces test-results/real-sites.json + a markdown summary.
+ * records per site what the extension reported plus diagnostics (frames, fixed overlays, engine
+ * snapshot, screenshot). Runs only with REAL_SITES=1. Output: test-results/real-sites.{json,md}
+ * and test-results/shots/<host>.png.
  */
 import { expect, test } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { launchExtension, type ExtensionSession } from './extension';
 
-const SITES = [
+const SITES = (process.env.REAL_SITES_LIST?.split(',').map((s) => s.trim()).filter(Boolean)) ?? [
   // CZ / SK
   'https://www.seznam.cz/',
   'https://www.idnes.cz/',
@@ -63,6 +64,33 @@ interface Row {
   reason?: string;
   rounds?: number;
   ms: number;
+  frames?: string[];
+  overlays?: string[];
+  debug?: unknown;
+}
+
+/** Runs inside the page: lists iframes and visible fixed/sticky containers with a text preview. */
+function pageDiagnostics(): { frames: string[]; overlays: string[] } {
+  const frames = Array.from(document.querySelectorAll('iframe'))
+    .map((f) => (f.getAttribute('src') || f.id || f.title || '?').slice(0, 120))
+    .filter((s) => s && s !== '?')
+    .slice(0, 15);
+  const overlays: string[] = [];
+  const all = Array.from(document.querySelectorAll('body *')).slice(0, 4000);
+  for (const el of all) {
+    if (!(el instanceof HTMLElement)) continue;
+    const st = getComputedStyle(el);
+    if (st.position !== 'fixed' && st.position !== 'sticky') continue;
+    if (st.display === 'none' || st.visibility === 'hidden') continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 200 || r.height < 60) continue;
+    const text = (el.innerText || '').replace(/\s+/g, ' ').trim();
+    if (text.length < 20) continue;
+    const tag = `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).slice(0, 3).join('.') : ''}`;
+    overlays.push(`${tag} [${Math.round(r.width)}x${Math.round(r.height)}] ${text.slice(0, 160)}`);
+    if (overlays.length >= 8) break;
+  }
+  return { frames, overlays };
 }
 
 test.describe('real sites survey', () => {
@@ -71,18 +99,20 @@ test.describe('real sites survey', () => {
 
   test.beforeAll(async () => {
     test.setTimeout(400_000);
-    ext = await launchExtension({ openjev: { enabled: false, endpoint: 'http://127.0.0.1:1', token: '' } });
+    ext = await launchExtension({ openjev: { enabled: false, endpoint: 'http://127.0.0.1:1', token: '' } }, { locale: 'cs-CZ' });
   });
   test.afterAll(async () => {
     await ext.close();
   });
 
   test('survey', async () => {
-    test.setTimeout(SITES.length * 25_000);
+    test.setTimeout(SITES.length * 30_000);
+    await mkdir('test-results/shots', { recursive: true });
     const rows: Row[] = [];
     for (const site of SITES) {
       const page = await ext.context.newPage();
       const t0 = Date.now();
+      const host = new URL(site).hostname;
       let row: Row = { site, state: 'error', ms: 0 };
       try {
         await page.goto(site, { waitUntil: 'domcontentloaded', timeout: 20_000 }).catch(() => undefined);
@@ -93,6 +123,12 @@ test.describe('real sites survey', () => {
           status = (await ext.tabStatus(pattern)) as Record<string, unknown> | null;
           if (status && status.state !== 'idle') break;
         }
+        // Let multi-round flows (settings iframe) settle, then read the final status.
+        await page.waitForTimeout(3000);
+        status = ((await ext.tabStatus(pattern)) as Record<string, unknown> | null) ?? status;
+        const diag = await page.evaluate(pageDiagnostics).catch(() => ({ frames: [], overlays: [] }));
+        const debug = await ext.debug(pattern).catch(() => null);
+        await page.screenshot({ path: `test-results/shots/${host}.png`, fullPage: false }).catch(() => undefined);
         row = {
           site,
           state: status ? String(status.state) : 'idle',
@@ -100,6 +136,9 @@ test.describe('real sites survey', () => {
           ...(status?.reason ? { reason: String(status.reason) } : {}),
           ...(typeof status?.rounds === 'number' ? { rounds: status.rounds } : {}),
           ms: Date.now() - t0,
+          frames: diag.frames,
+          overlays: diag.overlays,
+          debug,
         };
       } catch (err) {
         row = { site, state: 'error', reason: String(err).slice(0, 120), ms: Date.now() - t0 };
@@ -107,10 +146,9 @@ test.describe('real sites survey', () => {
         await page.close().catch(() => undefined);
       }
       rows.push(row);
-      console.warn(`${row.state.padEnd(14)} ${(row.source ?? '').padEnd(10)} ${site}  ${row.reason ?? ''}`);
+      console.warn(`${row.state.padEnd(12)} ${(row.source ?? '').padEnd(10)} ${site}  ${row.reason ?? ''}`);
     }
 
-    await mkdir('test-results', { recursive: true });
     await writeFile('test-results/real-sites.json', JSON.stringify(rows, null, 2));
     const counts = rows.reduce<Record<string, number>>((acc, r) => ((acc[r.state] = (acc[r.state] ?? 0) + 1), acc), {});
     const md = [
