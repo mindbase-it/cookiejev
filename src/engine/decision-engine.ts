@@ -25,6 +25,8 @@ export interface DecisionEngineDeps {
   clientFor: (settings: Settings) => OpenJevClient | null;
   now?: () => number;
   log?: (msg: string) => void;
+  /** Called whenever the OpenJev error state changes (null = last call succeeded). */
+  onOpenJevError?: (error: string | null) => void;
 }
 
 export const OPENJEV_BACKOFF_MS = 60_000;
@@ -107,10 +109,12 @@ export class DecisionEngine {
       try {
         const res = await client.ask(state, questions);
         this.lastOpenJevError = null;
+        this.deps.onOpenJevError?.(null);
         return decisionFromAnswers(snapshot, settings, res.answers, settings.confidenceThreshold);
       } catch (err) {
         const e = err instanceof OpenJevError ? err : new OpenJevError('network', String(err));
-        this.lastOpenJevError = e.message;
+        this.lastOpenJevError = `${e.kind}: ${e.message}`;
+        this.deps.onOpenJevError?.(this.lastOpenJevError);
         this.log(`openjev ${e.kind}: ${e.message}`);
         if (e.kind === 'auth' || e.kind === 'network') {
           this.openjevUnavailableUntil = this.now() + OPENJEV_BACKOFF_MS;

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../src/content/dom-utils', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../../src/content/dom-utils')>();
-  return { ...mod, isElementVisible: (el: Element) => !(el as HTMLElement).hidden };
+  return { ...mod, isElementVisible: (el: Element) => el.closest('[hidden]') === null };
 });
 
 import { buildSnapshot } from '../../src/content/snapshot';
@@ -36,5 +36,24 @@ describe('buildSnapshot', () => {
     expect(byText['Marketing']).toMatchObject({ kind: 'switch', checked: false });
     expect(byText['Nezbytné']).toMatchObject({ kind: 'checkbox', disabled: true });
     expect(map.get(byText['Přijmout vše']!.key)).toBe(document.getElementById('acc'));
+  });
+
+  it('keeps visually hidden toggles with a visible label but drops toggles in a collapsed panel', () => {
+    document.body.innerHTML = `
+      <div id="dlg">
+        <p>We use cookies</p>
+        <button>Settings</button>
+        <label for="styled">Marketing</label><input type="checkbox" id="styled" hidden checked>
+        <div id="panel" hidden>
+          <label for="p1">Analytics</label><input type="checkbox" id="p1" checked>
+          <button>Save</button>
+        </div>
+      </div>`;
+    const { snapshot } = buildSnapshot(document.getElementById('dlg')!, '', 1);
+    const texts = snapshot.elements.map((e) => e.text);
+    expect(texts).toContain('Settings');
+    expect(texts).toContain('Marketing');
+    expect(texts).not.toContain('Analytics');
+    expect(texts).not.toContain('Save');
   });
 });

@@ -20,6 +20,9 @@ const engine = new DecisionEngine({
   cache,
   clientFor: (s: Settings) => (s.openjev.enabled ? new OpenJevClient({ endpoint: s.openjev.endpoint, token: s.openjev.token, timeoutMs: 2500 }) : null),
   log: (m) => console.debug('[cookiejev]', m),
+  onOpenJevError: (error) => {
+    void chrome.storage.session.set({ 'openjev:lastError': error }).catch(() => undefined);
+  },
 });
 
 /** Per-tab status; service worker may be restarted, so also mirrored to session storage. */

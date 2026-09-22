@@ -15,6 +15,8 @@ export interface ExtensionSession {
   close(): Promise<void>;
   setSettings(patch: Partial<Settings>): Promise<void>;
   tabStatus(urlPattern: string): Promise<unknown>;
+  /** Last OpenJev error recorded by the service worker (null when the last call succeeded / none made). */
+  openjevError(): Promise<string | null>;
 }
 
 export async function launchExtension(settings: Partial<Settings> = {}): Promise<ExtensionSession> {
@@ -53,11 +55,18 @@ export async function launchExtension(settings: Partial<Settings> = {}): Promise
       return r[`tab:${id}`] ?? null;
     }, urlPattern);
 
+  const openjevError = () =>
+    worker.evaluate(async () => {
+      const r = await chrome.storage.session.get('openjev:lastError');
+      return (r['openjev:lastError'] as string | null | undefined) ?? null;
+    });
+
   return {
     context,
     worker,
     setSettings,
     tabStatus,
+    openjevError,
     async close() {
       await context.close();
       await rm(userDataDir, { recursive: true, force: true }).catch(() => undefined);

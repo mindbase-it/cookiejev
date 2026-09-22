@@ -30,7 +30,8 @@ test.describe('with OpenJev mock available', () => {
     await page.goto(`${FIXTURES}/generic-reject.html`);
     await expect(page.locator('body')).toHaveAttribute('data-result', 'rejected', { timeout: 10_000 });
     await expect(page.locator('#cookie-banner')).toBeHidden();
-    await expect.poll(() => ext.tabStatus(`${FIXTURES}/generic-reject.html`)).toMatchObject({ state: 'handled' });
+    await expect.poll(() => ext.tabStatus(`${FIXTURES}/generic-reject.html`)).toMatchObject({ state: 'handled', source: 'openjev' });
+    expect(await ext.openjevError(), 'OpenJev call from the service worker must succeed').toBeNull();
     await page.close();
   });
 
@@ -61,6 +62,8 @@ test.describe('with OpenJev mock available', () => {
   test('novel wording: decided by OpenJev, only dialog text is sent', async () => {
     const page = await ext.context.newPage();
     await page.goto(`${FIXTURES}/novel-banner.html`);
+    await expect.poll(() => ext.tabStatus(`${FIXTURES}/novel-banner.html`), { timeout: 15_000 }).not.toBeNull();
+    expect(await ext.openjevError(), 'OpenJev call from the service worker must succeed').toBeNull();
     await expect(page.locator('body')).toHaveAttribute('data-result', 'rejected', { timeout: 15_000 });
     await expect.poll(() => ext.tabStatus(`${FIXTURES}/novel-banner.html`)).toMatchObject({ state: 'handled', source: 'openjev' });
     const reqs = await openjevRequests();

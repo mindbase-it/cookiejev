@@ -91,6 +91,22 @@ function toggleLabel(el: Element): string {
   return '';
 }
 
+/**
+ * Toggle inputs are often visually hidden behind a styled label, so accept them when the input,
+ * its label or its parent is visible. Toggles inside a collapsed panel (display:none) are excluded.
+ */
+function toggleVisible(el: Element): boolean {
+  if (isElementVisible(el)) return true;
+  const root = el.getRootNode() as Document | ShadowRoot;
+  if (el.id) {
+    const lab = root.querySelector?.(`label[for="${cssEscape(el.id)}"]`);
+    if (lab && isElementVisible(lab)) return true;
+  }
+  const wrapping = el.closest('label');
+  if (wrapping && isElementVisible(wrapping)) return true;
+  return el.parentElement !== null && isElementVisible(el.parentElement);
+}
+
 function isChecked(el: Element): boolean {
   if (el instanceof HTMLInputElement) return el.checked;
   const ac = el.getAttribute('aria-checked');
@@ -117,8 +133,7 @@ export function buildSnapshot(root: Root, cmpHint: string, round: number): Snaps
     const kind = kindOf(el);
     if (!kind) continue;
     const isToggle = kind === 'checkbox' || kind === 'switch' || kind === 'radio';
-    // Toggle inputs are often visually hidden behind styled labels — keep them.
-    if (!isToggle && !isElementVisible(el)) continue;
+    if (isToggle ? !toggleVisible(el) : !isElementVisible(el)) continue;
     if (kind === 'link' && navigatesAway(el)) continue;
 
     const text = isToggle ? toggleLabel(el) : textOf(el);
