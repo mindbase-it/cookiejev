@@ -23,6 +23,10 @@ export const CONSENT_TOPIC_WORDS: string[] = [
   'συγκατάθεση', 'απόρρητο',
   'sutikimas', 'slapukai', 'piekrišana', 'sīkdatnes', 'nõusolek', 'küpsised',
   'privatnost', 'kolačići', 'piškotki', 'soglasje', 'бисквитки', 'съгласие',
+  // Stems for inflected languages (matched as word prefixes by hasTopicWord).
+  'zgod', 'ciastecz', 'prywatno', 'sledov', 'soukrom', 'sukrom', 'zustimm', 'einwillig', 'consent', 'confidential',
+  'privac', 'consens', 'toestemm', 'samtyck', 'samtykk', 'suostum', 'evaste', 'hozzajarul', 'sutik', 'consimt',
+  'sutikim', 'slapuk', 'piekris', 'sikdatn', 'nousolek', 'kupsis', 'kolacic', 'piskotk', 'soglasj', 'biskvitk', 'saglasi',
 ];
 
 /** Phrases meaning "reject / decline all (non-essential)". Higher weight for "all" variants. */
@@ -38,7 +42,7 @@ export const REJECT_PHRASES: string[] = [
   'rifiuta tutto', 'rifiuta', 'rifiuto', 'solo necessari', 'continua senza accettare', 'non accetto',
   'rechazar todo', 'rechazar', 'rechazar todas', 'solo necesarias', 'continuar sin aceptar', 'no acepto',
   'rejeitar tudo', 'rejeitar', 'recusar tudo', 'recusar', 'apenas necessários',
-  'odrzuć wszystkie', 'odrzuć wszystko', 'odrzuć', 'nie zgadzam się', 'tylko niezbędne', 'odmów',
+  'odrzuć wszystkie', 'odrzuć wszystko', 'odrzuć', 'odrzucam', 'nie zgadzam się', 'nie wyrażam zgody', 'nie akceptuję', 'tylko niezbędne', 'odmów',
   'alles weigeren', 'weigeren', 'alleen noodzakelijk', 'alleen noodzakelijke', 'niet akkoord', 'afwijzen',
   'avvisa alla', 'avvisa', 'neka alla', 'neka', 'endast nödvändiga',
   'avvis alle', 'avvis', 'kun nødvendige',
@@ -175,6 +179,30 @@ export const CATEGORY_WORDS: CategoryWords = {
     'funkcionális', 'funcționale', 'λειτουργικά', 'funkciniai', 'funkcionālās', 'funktsionaalsed', 'funkcionalni', 'функционални',
   ],
 };
+
+let topicNormalized: string[] | null = null;
+
+/**
+ * True when the text mentions cookies/consent in some EU language. Single-word topics match as
+ * word prefixes ("zgody" <- "zgoda", "cookies" <- "cookie", "souhlasím" <- "souhlas"); multi-word
+ * topics must appear as a whole phrase.
+ */
+export function hasTopicWord(text: string): boolean {
+  const t = normalize(text);
+  if (!t) return false;
+  topicNormalized ??= CONSENT_TOPIC_WORDS.map((w) => normalize(w));
+  const padded = ` ${t} `;
+  const words = t.split(' ');
+  for (const w of topicNormalized) {
+    if (!w) continue;
+    if (w.includes(' ')) {
+      if (padded.includes(` ${w} `)) return true;
+    } else if (words.some((x) => x.startsWith(w))) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /** Lowercases, strips diacritics and collapses whitespace/punctuation for robust matching. */
 export function normalize(text: string): string {

@@ -1,9 +1,11 @@
 import type { DecideResponse } from '../shared/messages';
 import { sendToBackground } from '../shared/messages';
 import type { TabStatus } from '../shared/types';
-import { findCandidates } from './detector';
+import { scoreAgainst } from '../engine/heuristics';
+import { ACCEPT_PHRASES, normalize } from '../shared/keywords';
+import { type Candidate, findCandidates } from './detector';
 import { hostElement, isElementVisible } from './dom-utils';
-import { executePlan, sleep } from './executor';
+import { dispatchClick, executePlan, sleep } from './executor';
 import { buildSnapshot } from './snapshot';
 
 declare global {
@@ -35,6 +37,25 @@ async function report(status: TabStatus, planKey?: string): Promise<void> {
   } catch {
     /* extension context gone */
   }
+}
+
+const CONFIRM_LABELS = ['ok', 'okay', 'close', 'done', 'got it', 'continue', 'zavřít', 'rozumím', 'schließen', 'fermer', 'chiudi', 'cerrar', 'fechar', 'zamknij', 'sluiten', 'stäng', 'luk', 'lukk', 'sulje', 'bezárás', 'închide'].map(normalize);
+const ACCEPT_NORMALIZED = ACCEPT_PHRASES.map(normalize);
+
+/**
+ * After consent was saved some CMPs show a short confirmation ("We have received your choices - OK").
+ * Returns its single button when the candidate has that shape, else null.
+ */
+function confirmationButton(cand: Candidate): Element | null {
+  const { snapshot, map } = buildSnapshot(cand.root, cand.cmpHint, 99);
+  if (snapshot.dialogText.length > 300) return null;
+  const toggles = snapshot.elements.filter((e) => e.kind === 'checkbox' || e.kind === 'switch' || e.kind === 'radio');
+  if (toggles.length > 0) return null;
+  const buttons = snapshot.elements.filter((e) => (e.kind === 'button' || e.kind === 'link') && !e.disabled);
+  if (buttons.length !== 1) return null;
+  const label = buttons[0]!.text || buttons[0]!.ariaLabel;
+  const isConfirm = scoreAgainst(label, CONFIRM_LABELS) >= 0.9 || scoreAgainst(label, ACCEPT_NORMALIZED) >= 0.9;
+  return isConfirm ? (map.get(buttons[0]!.key) ?? null) : null;
 }
 
 async function handleDialog(state: PageState): Promise<boolean> {
@@ -92,10 +113,17 @@ async function handleDialog(state: PageState): Promise<boolean> {
     if (!stillVisible) {
       // Some CMPs replace the banner with a preference dialog in a new container.
       const next = findCandidates();
-      if (next.length > 0 && plan.expectMoreRounds && state.rounds < MAX_ROUNDS) {
-        cand.root = next[0]!.root;
-        cand.cmpHint = next[0]!.cmpHint;
-        continue;
+      if (next.length > 0 && state.rounds < MAX_ROUNDS) {
+        if (plan.expectMoreRounds) {
+          cand.root = next[0]!.root;
+          cand.cmpHint = next[0]!.cmpHint;
+          continue;
+        }
+        const confirm = confirmationButton(next[0]!);
+        if (confirm) {
+          dispatchClick(confirm);
+          await sleep(SETTLE_MS / 2);
+        }
       }
       await report(lastSource);
       return true;

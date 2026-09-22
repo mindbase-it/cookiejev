@@ -1,5 +1,5 @@
 import { lightDomContainerSelectors } from '../engine/cmp-rules';
-import { CONSENT_TOPIC_WORDS, normalize } from '../shared/keywords';
+import { hasTopicWord } from '../shared/keywords';
 import { type Root, deepQueryAll, elementArea, hostElement, isElementVisible, viewportArea, visibleText } from './dom-utils';
 
 export interface Candidate {
@@ -38,13 +38,6 @@ const GENERIC_SELECTOR = [
   '[class*="privacy" i]',
 ].join(',');
 
-const TOPIC = CONSENT_TOPIC_WORDS.map(normalize);
-
-function hasTopicWord(text: string): boolean {
-  const t = ` ${normalize(text)} `;
-  return TOPIC.some((w) => t.includes(` ${w} `));
-}
-
 function hasInteractive(root: Root): boolean {
   return deepQueryAll(root, INTERACTIVE_SELECTOR).some((el) => isElementVisible(el) || el instanceof HTMLInputElement);
 }
@@ -80,6 +73,23 @@ function acceptGeneric(el: Element): boolean {
   return area >= viewportArea() * 0.01 || buttons >= 2;
 }
 
+/** Consent dialogs rendered inside open shadow roots (e.g. Seznam CMP, Usercentrics-like widgets). */
+function shadowCandidates(doc: Document): Candidate[] {
+  const out: Candidate[] = [];
+  let scanned = 0;
+  for (const el of Array.from(doc.querySelectorAll('*'))) {
+    if (scanned++ > 6000) break;
+    const sr = el.shadowRoot;
+    if (!sr || !(el instanceof HTMLElement)) continue;
+    const interactive = deepQueryAll(sr, INTERACTIVE_SELECTOR).filter(isElementVisible);
+    if (interactive.length === 0) continue;
+    const text = visibleText(sr);
+    if (text.length < 20 || text.length > 30000 || !hasTopicWord(text)) continue;
+    out.push({ root: sr, cmpHint: '' });
+  }
+  return out;
+}
+
 /** Removes candidates contained in another candidate (keeps the outermost). */
 function dedupe(cands: Candidate[]): Candidate[] {
   const hosts = cands.map((c) => hostElement(c.root));
@@ -112,6 +122,9 @@ export function findCandidates(doc: Document = document): Candidate[] {
     }
   }
   if (out.length > 0) return dedupe(out);
+
+  const shadow = shadowCandidates(doc);
+  if (shadow.length > 0) return shadow;
 
   const generic = new Set<Element>();
   try {

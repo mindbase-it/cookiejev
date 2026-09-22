@@ -179,6 +179,15 @@ export const CMP_RULES: CmpRule[] = [
     accept: [{ classToken: 'moove-gdpr-infobar-allow-all' }],
   },
   {
+    id: 'seznam',
+    containerSelectors: ['#szn-cmp-dialog-container', 'szn-cmp-dialog', '.szn-cmp-dialog-container'],
+    shadow: true,
+    reject: [{ labelIn: ['odmítnout vše', 'odmítnout', 'nesouhlasím', 'pouze nezbytné'] }],
+    manage: [{ labelIn: ['nastavení', 'podrobné nastavení', 'upravit nastavení', 'nastavit'] }],
+    save: [{ labelIn: ['uložit nastavení', 'uložit', 'potvrdit', 'uložit a zavřít'] }],
+    accept: [{ labelIn: ['souhlasím', 'přijmout vše', 'rozumím a souhlasím'] }],
+  },
+  {
     id: 'google',
     containerSelectors: ['form[action*="consent.google"]', 'form[action*="consent.youtube"]', 'div[aria-modal="true"][data-consent]'],
     reject: [{ labelIn: ['reject all', 'odmitnout vse', 'alle ablehnen', 'tout refuser', 'rifiuta tutto', 'rechazar todo', 'odrzuc wszystko'] }],

@@ -1,10 +1,10 @@
 import {
   ACCEPT_PHRASES,
   CATEGORY_WORDS,
-  CONSENT_TOPIC_WORDS,
   MANAGE_PHRASES,
   REJECT_PHRASES,
   SAVE_PHRASES,
+  hasTopicWord,
   normalize,
 } from '../shared/keywords';
 import type { ActionPlan, Category, DialogSnapshot, Settings, SnapshotElement, Step } from '../shared/types';
@@ -16,7 +16,6 @@ const NORMALIZED = {
   save: SAVE_PHRASES.map(normalize),
   manage: MANAGE_PHRASES.map(normalize),
   accept: ACCEPT_PHRASES.map(normalize),
-  topic: CONSENT_TOPIC_WORDS.map(normalize),
 };
 
 const NORMALIZED_CATEGORIES: Record<Exclude<Category, 'unknown'>, string[]> = {
@@ -124,11 +123,8 @@ export function desiredToggleState(category: Category, settings: Settings): bool
 /** True when the dialog text mentions cookies/consent in some EU language. */
 export function looksLikeConsentDialog(snapshot: DialogSnapshot): boolean {
   if (snapshot.cmpHint) return true;
-  const t = normalize(snapshot.dialogText);
-  if (!t) return false;
-  const hasTopic = NORMALIZED.topic.some((w) => containsWholePhrase(t, w));
   const hasControl = snapshot.elements.some((e) => !e.disabled);
-  return hasTopic && hasControl;
+  return hasControl && hasTopicWord(snapshot.dialogText);
 }
 
 function isToggle(el: SnapshotElement): boolean {

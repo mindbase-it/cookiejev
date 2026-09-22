@@ -8,3 +8,4 @@ test-results/
 .DS_Store
 Thumbs.db
 e2e-run.log
+local-survey.log

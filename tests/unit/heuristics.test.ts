@@ -149,3 +149,17 @@ describe('heuristicPlan — accept_all', () => {
     expect(heuristicPlan(snap([r, a]), settings({ policy: 'accept_all' }))?.steps).toEqual([{ type: 'click', key: a.key }]);
   });
 });
+
+describe('heuristicPlan — Polish wording (wp.pl / onet.pl)', () => {
+  it('picks "Odrzucam…" over "Akceptuję i przechodzę do serwisu"', () => {
+    const accept = el('Akceptuję i przechodzę do serwisu');
+    const reject = el('Odrzucam i chcę dowiedzieć się więcej');
+    const plan = heuristicPlan(snap([accept, reject], { dialogText: 'Cenimy Twoją prywatność. Kliknij, aby wyrazić zgodę.' }), settings());
+    expect(plan?.steps).toEqual([{ type: 'click', key: reject.key }]);
+  });
+  it('recognises inflected Polish consent text as a consent dialog', () => {
+    const s = snap([el('PRZEJDŹ DO SERWISU'), el('USTAWIENIA ZAAWANSOWANE')], { dialogText: 'Klikając „Przejdź do serwisu” udzielasz zgody na przetwarzanie Twoich danych osobowych' });
+    expect(looksLikeConsentDialog(s)).toBe(true);
+    expect(heuristicPlan(s, settings())?.expectMoreRounds).toBe(true);
+  });
+});
