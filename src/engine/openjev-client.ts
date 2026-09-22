@@ -69,7 +69,9 @@ export class OpenJevClient {
     this.endpoint = opts.endpoint.replace(/\/+$/, '');
     this.token = opts.token ?? '';
     this.timeoutMs = opts.timeoutMs ?? 2500;
-    this.fetchFn = opts.fetchFn ?? fetch;
+    // Never store the bare global `fetch`: calling it with `this` bound to the client throws
+    // "Illegal invocation" in service workers.
+    this.fetchFn = opts.fetchFn ?? ((input, init) => fetch(input, init));
   }
 
   private headers(): Record<string, string> {

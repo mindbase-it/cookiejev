@@ -71,6 +71,17 @@ describe('OpenJevClient.ask', () => {
     await expect(client.ask('s', {})).rejects.toMatchObject({ kind: 'timeout' });
   });
 
+  it('uses the global fetch without rebinding `this` (service workers throw Illegal invocation otherwise)', async () => {
+    const seenThis: unknown[] = [];
+    vi.stubGlobal('fetch', function (this: unknown) {
+      seenThis.push(this);
+      return Promise.resolve(jsonResponse({ model_dir: 'm' }));
+    });
+    const client = new OpenJevClient({ endpoint: 'http://x' });
+    expect(await client.version()).toEqual({ model: 'm' });
+    expect(seenThis[0] === undefined || seenThis[0] === globalThis).toBe(true);
+  });
+
   it('version() reads model_dir', async () => {
     const fetchFn = async () => jsonResponse({ model_dir: '/models/openjev', T: 1.2 });
     const client = new OpenJevClient({ endpoint: 'http://x', fetchFn: fetchFn as unknown as typeof fetch });
