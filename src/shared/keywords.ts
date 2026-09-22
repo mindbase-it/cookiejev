@@ -128,6 +128,13 @@ export const PAY_WORDS: string[] = [
   '/měsíc', '/mesiac', '/month', '/monat', '/mois', '/mese', '/mes', '/rok', '/year', '/jahr', '/an', '/anno', '/año', 'per month', 'pro monat', 'měsíčně', 'monatlich', 'mensuel', 'annuo', 'anno',
 ];
 
+/** Labels of the single button on a post-consent confirmation ("We have received your choices"). */
+export const CONFIRM_PHRASES: string[] = [
+  'ok', 'okay', 'close', 'done', 'got it', 'continue', 'zavřít', 'rozumím', 'pokračovat', 'zavrieť', 'schließen', 'weiter', 'fermer', 'continuer',
+  'chiudi', 'continua', 'cerrar', 'continuar', 'fechar', 'zamknij', 'kontynuuj', 'sluiten', 'doorgaan', 'stäng', 'fortsätt', 'luk', 'lukk', 'sulje',
+  'bezárás', 'tovább', 'închide', 'continuă', 'κλείσιμο', 'uždaryti', 'aizvērt', 'sulge', 'zatvori', 'zapri', 'затвори',
+];
+
 export interface CategoryWords {
   necessary: string[];
   analytics: string[];

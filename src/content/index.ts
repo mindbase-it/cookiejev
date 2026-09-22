@@ -2,7 +2,7 @@ import type { DecideResponse } from '../shared/messages';
 import { sendToBackground } from '../shared/messages';
 import type { TabStatus } from '../shared/types';
 import { scoreAgainst } from '../engine/heuristics';
-import { ACCEPT_PHRASES, normalize } from '../shared/keywords';
+import { ACCEPT_PHRASES, CONFIRM_PHRASES, normalize } from '../shared/keywords';
 import { type Candidate, findCandidates } from './detector';
 import { hostElement, isElementVisible } from './dom-utils';
 import { dispatchClick, executePlan, sleep } from './executor';
@@ -65,7 +65,7 @@ async function report(status: TabStatus, planKey?: string): Promise<void> {
   }
 }
 
-const CONFIRM_LABELS = ['ok', 'okay', 'close', 'done', 'got it', 'continue', 'zavřít', 'rozumím', 'schließen', 'fermer', 'chiudi', 'cerrar', 'fechar', 'zamknij', 'sluiten', 'stäng', 'luk', 'lukk', 'sulje', 'bezárás', 'închide'].map(normalize);
+const CONFIRM_LABELS = CONFIRM_PHRASES.map(normalize);
 const ACCEPT_NORMALIZED = ACCEPT_PHRASES.map(normalize);
 
 /**
@@ -226,7 +226,8 @@ function main(): void {
       return;
     }
     observer = new MutationObserver(schedule);
-    observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'hidden', 'aria-hidden', 'open'] });
+    // Observe the Document node itself: document.open()/write() (about:blank CMP frames) replaces documentElement.
+    observer.observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'hidden', 'aria-hidden', 'open'] });
     void run();
     // Late banners without DOM mutations we catch (e.g. CSS transitions).
     window.setTimeout(schedule, 1500);

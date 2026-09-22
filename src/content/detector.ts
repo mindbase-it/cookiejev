@@ -90,6 +90,20 @@ function shadowCandidates(doc: Document): Candidate[] {
   return out;
 }
 
+/**
+ * When this frame IS the consent dialog (CMPs like Seznam, Sourcepoint or Quantcast render the
+ * whole banner into an iframe), nothing inside is position:fixed; the frame body is the dialog.
+ */
+function frameBodyCandidate(doc: Document): Candidate | null {
+  const body = doc.body;
+  if (!body) return null;
+  const text = visibleText(body);
+  if (text.length < 20 || text.length > 30000 || !hasTopicWord(text)) return null;
+  const buttons = deepQueryAll(body, 'button,[role="button"],input[type="button"],input[type="submit"],a[href]').filter(isElementVisible);
+  if (buttons.length === 0) return null;
+  return { root: body, cmpHint: '' };
+}
+
 /** Removes candidates contained in another candidate (keeps the outermost). */
 function dedupe(cands: Candidate[]): Candidate[] {
   const hosts = cands.map((c) => hostElement(c.root));
@@ -100,7 +114,7 @@ function dedupe(cands: Candidate[]): Candidate[] {
 }
 
 /** Finds visible consent-dialog candidates in this document. Known CMPs come first. */
-export function findCandidates(doc: Document = document): Candidate[] {
+export function findCandidates(doc: Document = document, inFrame: boolean = window.self !== window.top): Candidate[] {
   const out: Candidate[] = [];
   const seen = new Set<Element>();
 
@@ -125,6 +139,11 @@ export function findCandidates(doc: Document = document): Candidate[] {
 
   const shadow = shadowCandidates(doc);
   if (shadow.length > 0) return shadow;
+
+  if (inFrame) {
+    const frame = frameBodyCandidate(doc);
+    if (frame) return [frame];
+  }
 
   const generic = new Set<Element>();
   try {

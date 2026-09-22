@@ -180,3 +180,15 @@ describe('heuristicPlan — consent-or-pay walls', () => {
     expect(mentionsPayment('Pouze nezbytné')).toBe(false);
   });
 });
+
+describe('heuristicPlan — post-consent confirmation', () => {
+  it('clicks the single OK button in a later round', () => {
+    const ok = el('OK');
+    const plan = heuristicPlan(snap([ok], { round: 2, dialogText: 'We have received your choices and your requests will be honoured' }), settings());
+    expect(plan?.steps).toEqual([{ type: 'click', key: ok.key }]);
+    expect(plan?.reason).toContain('confirmation');
+  });
+  it('does not treat a first-round single Accept as confirmation', () => {
+    expect(heuristicPlan(snap([el('OK')], { round: 1, dialogText: 'We use cookies' }), settings())).toBeNull();
+  });
+});

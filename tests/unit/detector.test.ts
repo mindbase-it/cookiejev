@@ -53,3 +53,20 @@ describe('findCandidates', () => {
     expect(findCandidates(document)).toHaveLength(0);
   });
 });
+
+describe('findCandidates in an iframe', () => {
+  it('treats the frame body as the dialog when the whole frame is the banner', () => {
+    document.body.innerHTML = `<div><p>Abyste mohli pokračovat, potřebujeme vědět, jakou formou vám můžeme zobrazovat reklamu. Využíváme pouze nezbytné technické cookies.</p><button>Souhlasím</button><button>Nastavení</button></div>`;
+    const cands = findCandidates(document, true);
+    expect(cands).toHaveLength(1);
+    expect(cands[0]!.root).toBe(document.body);
+  });
+  it('does not use the frame body for ordinary iframes', () => {
+    document.body.innerHTML = `<div><p>Latest headlines from the newsroom.</p><button>Read more</button></div>`;
+    expect(findCandidates(document, true)).toHaveLength(0);
+  });
+  it('never uses the top-level body as a candidate', () => {
+    document.body.innerHTML = `<div><p>We use cookies.</p><button>OK</button></div>`;
+    expect(findCandidates(document, false)).toHaveLength(0);
+  });
+});

@@ -1,6 +1,7 @@
 import {
   ACCEPT_PHRASES,
   CATEGORY_WORDS,
+  CONFIRM_PHRASES,
   MANAGE_PHRASES,
   PAY_WORDS,
   REJECT_PHRASES,
@@ -13,6 +14,7 @@ import type { ActionPlan, Category, DialogSnapshot, Settings, SnapshotElement, S
 export type ButtonIntent = 'reject' | 'save' | 'manage' | 'accept' | 'other';
 
 const NORMALIZED = {
+  confirm: CONFIRM_PHRASES.map(normalize),
   reject: REJECT_PHRASES.map(normalize),
   save: SAVE_PHRASES.map(normalize),
   manage: MANAGE_PHRASES.map(normalize),
@@ -193,6 +195,15 @@ export function planToggles(elements: SnapshotElement[], settings: Settings): { 
 export function heuristicPlan(snapshot: DialogSnapshot, settings: Settings, exclude: Set<string> = new Set()): ActionPlan | null {
   const els = snapshot.elements;
   const toggles = els.filter(isToggle);
+
+  // Post-consent confirmation ("We have received your choices — OK"): a later-round dialog with one button.
+  if (snapshot.round > 1 && toggles.length === 0 && snapshot.dialogText.length <= 300) {
+    const buttons = els.filter((e) => isClickable(e) && !exclude.has(e.key));
+    const only = buttons.length === 1 ? buttons[0]! : null;
+    if (only && !mentionsPayment(elementLabel(only)) && (scoreAgainst(elementLabel(only), NORMALIZED.confirm) >= 0.9 || scoreAgainst(elementLabel(only), NORMALIZED.accept) >= 0.9)) {
+      return { steps: [{ type: 'click', key: only.key }], source: 'heuristic', confidence: 0.8, expectMoreRounds: false, reason: `confirmation: "${elementLabel(only)}"` };
+    }
+  }
 
   if (settings.policy === 'accept_all') {
     const accept = best(els, 'accept', exclude);
