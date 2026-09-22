@@ -94,7 +94,8 @@ test.describe('with OpenJev mock available', () => {
     await page.waitForTimeout(2500);
     const frames = await ext.frames(`${FIXTURES}/iframe-blank.html`);
     const debug = await ext.debug(`${FIXTURES}/iframe-blank.html`);
-    expect(frames, `content script must start in the about:blank frame; frames=${JSON.stringify(frames)} debug=${JSON.stringify(debug)}`).toContainEqual(expect.objectContaining({ protocol: 'about:', top: false }));
+    // document.write() gives the about:blank frame the parent's URL, so only assert that a sub-frame was injected.
+    expect(frames, `content script must start in the iframe; frames=${JSON.stringify(frames)} debug=${JSON.stringify(debug)}`).toContainEqual(expect.objectContaining({ top: false }));
     await expect(page.locator('body')).toHaveAttribute('data-result', 'rejected', { timeout: 15_000 });
     await expect.poll(() => ext.tabStatus(`${FIXTURES}/iframe-blank.html`)).toMatchObject({ state: 'handled' });
     await page.close();
