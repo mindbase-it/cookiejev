@@ -13,7 +13,16 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-function dispatchClick(el: Element): void {
+/** Anchors with a javascript: href navigate on click; page CSP blocks that and logs an extension error. */
+function isJavascriptHref(el: Element): boolean {
+  return el instanceof HTMLAnchorElement && (el.getAttribute('href') || '').trim().toLowerCase().startsWith('javascript:');
+}
+
+export function dispatchClick(el: Element): void {
+  if (isJavascriptHref(el)) {
+    // Site handlers registered earlier on the element still run; bubbling to delegated handlers continues.
+    el.addEventListener('click', (e) => e.preventDefault(), { once: true });
+  }
   if (el instanceof HTMLElement) {
     el.click();
     return;
