@@ -36,6 +36,18 @@ async function copyStatic() {
   }
 }
 
+/**
+ * Content scripts are classic scripts: a stray top-level `export` (e.g. an exported helper in
+ * src/content/index.ts) makes esbuild emit `export {...}` and the whole file becomes a syntax error.
+ */
+async function assertClassicScript(file) {
+  const code = await readFile(file, 'utf8');
+  const exportStatement = new RegExp(String.raw`(^|[;\n\r])\s*export\s*[{*]|\bexport\s+(default|function|const|let|var|class)\b`);
+  if (exportStatement.test(code)) {
+    throw new Error(`${path.relative(root, file)} contains an ES module export; content scripts must not export`);
+  }
+}
+
 async function main() {
   await rm(dist, { recursive: true, force: true });
   await mkdir(dist, { recursive: true });
@@ -60,6 +72,7 @@ async function main() {
     console.warn('watching…');
   } else {
     await esbuild.build(options);
+    await assertClassicScript(path.join(dist, 'content/index.js'));
   }
 }
 

@@ -31,7 +31,7 @@ interface PageState {
  * Hostname of the page this frame belongs to. Consent dialogs are often rendered in about:blank /
  * srcdoc iframes (Seznam CMP), where location.hostname is empty; fall back to the parent origin.
  */
-export function pageHostname(): string {
+function pageHostname(): string {
   if (location.hostname) return location.hostname;
   try {
     const anc = (location as Location & { ancestorOrigins?: DOMStringList }).ancestorOrigins;
