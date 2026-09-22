@@ -1,6 +1,7 @@
 import { lightDomContainerSelectors } from '../engine/cmp-rules';
 import { scoreAgainst } from '../engine/heuristics';
 import { ACCEPT_PHRASES, MANAGE_PHRASES, REJECT_PHRASES, hasTopicWord, normalize } from '../shared/keywords';
+import { type Root, collapseWhitespace, deepQueryAll, elementArea, hostElement, isElementVisible, viewportArea, visibleText } from './dom-utils';
 
 const ACCEPT_N = ACCEPT_PHRASES.map(normalize);
 const REJECT_N = REJECT_PHRASES.map(normalize);
@@ -8,7 +9,7 @@ const MANAGE_N = MANAGE_PHRASES.map(normalize);
 
 function buttonLabel(el: Element): string {
   if (el instanceof HTMLInputElement) return el.value || '';
-  return ((el as HTMLElement).innerText || el.textContent || el.getAttribute('aria-label') || '').replace(/s+/g, ' ').trim();
+  return collapseWhitespace((el as HTMLElement).innerText || el.textContent || el.getAttribute('aria-label') || '');
 }
 
 /**
@@ -23,7 +24,6 @@ function looksLikeConsentButtonBar(buttons: Element[]): boolean {
   const rejectOrManage = labels.some((l) => scoreAgainst(l, REJECT_N) >= 0.9 || scoreAgainst(l, MANAGE_N) >= 0.9);
   return accept && rejectOrManage;
 }
-import { type Root, deepQueryAll, elementArea, hostElement, isElementVisible, viewportArea, visibleText } from './dom-utils';
 
 export interface Candidate {
   root: Root;
