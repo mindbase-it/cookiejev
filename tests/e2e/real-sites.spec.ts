@@ -81,6 +81,7 @@ interface FrameProbe {
   buttons: string[];
   shadowHosts: number;
   shadowTexts: string[];
+  bodyHtml?: string;
 }
 
 /** Runs inside the page: lists iframes and visible fixed/sticky containers with a text preview. */
@@ -175,10 +176,18 @@ test.describe('real sites survey', () => {
                 visible = r.width > 10 && r.height > 10 && st.display !== 'none' && st.visibility !== 'hidden';
                 size = `${Math.round(r.width)}x${Math.round(r.height)}`;
               }
-              return { text: text.slice(0, 160), buttons, shadowHosts, shadowTexts: shadowTexts.slice(0, 5), visible, size };
+              const cmpLike = /cmp|consent|privacy|cookie|gdpr/i.test(location.href);
+              let bodyHtml = '';
+              if (cmpLike && body) {
+                const clone = body.cloneNode(true) as HTMLElement;
+                clone.querySelectorAll('style,script,svg').forEach((n) => n.remove());
+                bodyHtml = clone.innerHTML.replace(/\s+/g, ' ').slice(0, 1500);
+              }
+              return { text: text.slice(0, 160), buttons, shadowHosts, shadowTexts: shadowTexts.slice(0, 5), visible, size, bodyHtml };
             });
             const consentish = /cookie|consent|souhlas|zgod|gdpr|privacy|soukrom/i.test(probe.text + ' ' + probe.shadowTexts.join(' '));
-            if (consentish || probe.shadowHosts > 0 || (fr === page.mainFrame())) frameProbe.push({ url: fr.url().slice(0, 100), ...probe });
+            const cmpUrl = /cmp|consent|privacy|cookie|gdpr/i.test(fr.url());
+            if (consentish || cmpUrl || probe.shadowHosts > 0 || fr === page.mainFrame()) frameProbe.push({ url: fr.url().slice(0, 100), ...probe });
           } catch {
             /* cross-process / detached frame */
           }
