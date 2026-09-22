@@ -149,6 +149,27 @@ function frameBodyCandidate(doc: Document): Candidate | null {
   return { root: body, cmpHint: '' };
 }
 
+/** Hosts that serve a whole page as the consent dialog (after a redirect from the site). */
+const CONSENT_PAGE_HOSTS = /(^|\.)(cmp\.seznam\.cz|consent\.google\.[a-z.]+|consent\.youtube\.com|consent\.yahoo\.com|guce\.yahoo\.com)$/i;
+const CONSENT_PAGE_PATH = /consent|souhlas|cookie|gdpr|privacy-settings|nastaveni-souhlasu/i;
+
+/**
+ * Full-page consent interstitial (top-level document): Seznam and Google redirect to a dedicated
+ * page whose body IS the dialog. Requires a consent-ish host or URL path plus consent wording.
+ */
+function consentPageCandidate(doc: Document): Candidate | null {
+  const body = doc.body;
+  if (!body) return null;
+  const hostMatch = CONSENT_PAGE_HOSTS.test(location.hostname);
+  const pathMatch = CONSENT_PAGE_PATH.test(location.pathname);
+  if (!hostMatch && !pathMatch) return null;
+  const text = visibleText(body);
+  if (text.length < 20 || text.length > 30000 || !hasTopicWord(text)) return null;
+  const buttons = deepQueryAll(body, 'button,[role="button"],input[type="button"],input[type="submit"]').filter(isElementVisible);
+  if (buttons.length === 0 || buttons.length > 15) return null;
+  return { root: body, cmpHint: hostMatch && /seznam/.test(location.hostname) ? 'seznam' : '' };
+}
+
 /** Removes candidates contained in another candidate (keeps the outermost). */
 function dedupe(cands: Candidate[]): Candidate[] {
   const hosts = cands.map((c) => hostElement(c.root));
@@ -191,6 +212,9 @@ export function findCandidates(doc: Document = document, inFrame: boolean = wind
   if (inFrame) {
     const frame = frameBodyCandidate(doc);
     if (frame) return [frame];
+  } else {
+    const page = consentPageCandidate(doc);
+    if (page) return [page];
   }
 
   const generic = new Set<Element>();

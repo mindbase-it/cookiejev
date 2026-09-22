@@ -112,3 +112,19 @@ describe('findCandidates — consent teaser without controls', () => {
     expect(cands[0]!.cmpHint).toBe('seznam');
   });
 });
+
+describe('findCandidates — full-page consent interstitial', () => {
+  it('uses the page body on a consent-page URL path with cookie wording and a few buttons', () => {
+    window.history.replaceState({}, '', '/nastaveni-souhlasu?return_url=x');
+    document.body.innerHTML = `<main><h1>Nastavení souhlasu</h1><p>Seznam.cz a jeho partneři používají cookies.</p><button>Souhlasím</button><button>Odmítnout vše</button><button>Podrobné nastavení</button></main>`;
+    const cands = findCandidates(document, false);
+    expect(cands).toHaveLength(1);
+    expect(cands[0]!.root).toBe(document.body);
+    window.history.replaceState({}, '', '/');
+  });
+  it('ignores ordinary pages that merely mention cookies', () => {
+    window.history.replaceState({}, '', '/article');
+    document.body.innerHTML = `<main><p>Recept na cookies.</p><button>Sdílet</button></main>`;
+    expect(findCandidates(document, false)).toHaveLength(0);
+  });
+});
