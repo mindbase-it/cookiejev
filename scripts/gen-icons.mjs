@@ -73,3 +73,9 @@ for (const size of [16, 32, 48, 128]) {
   await writeFile(path.join(outDir, `icon${size}.png`), png(size, pixel(size)));
 }
 console.warn('icons written to', outDir);
+
+// Store logos: Edge Add-ons wants 300×300, Chrome Web Store 128×128 (already above).
+const storeDir = path.join(root, 'docs/store');
+await mkdir(storeDir, { recursive: true });
+await writeFile(path.join(storeDir, 'logo-300.png'), png(300, pixel(300)));
+console.warn('store logo written to', storeDir);
