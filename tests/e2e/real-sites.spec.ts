@@ -80,6 +80,7 @@ interface FrameProbe {
   text: string;
   buttons: string[];
   shadowHosts: number;
+  shadowTexts: string[];
 }
 
 /** Runs inside the page: lists iframes and visible fixed/sticky containers with a text preview. */
@@ -153,7 +154,13 @@ test.describe('real sites survey', () => {
                 .filter(Boolean)
                 .slice(0, 12);
               let shadowHosts = 0;
-              for (const el of Array.from(document.querySelectorAll('*')).slice(0, 5000)) if (el.shadowRoot) shadowHosts++;
+              const shadowTexts: string[] = [];
+              for (const el of Array.from(document.querySelectorAll('*')).slice(0, 5000)) {
+                if (!el.shadowRoot) continue;
+                shadowHosts++;
+                const st = (el.shadowRoot.textContent || '').replace(/s+/g, ' ').trim();
+                if (st) shadowTexts.push(`${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}: ${st.slice(0, 140)}`);
+              }
               const fe = window.frameElement as HTMLElement | null;
               let visible: boolean | null = null;
               let size = '';
@@ -163,9 +170,10 @@ test.describe('real sites survey', () => {
                 visible = r.width > 10 && r.height > 10 && st.display !== 'none' && st.visibility !== 'hidden';
                 size = `${Math.round(r.width)}x${Math.round(r.height)}`;
               }
-              return { text: text.slice(0, 160), buttons, shadowHosts, visible, size };
+              return { text: text.slice(0, 160), buttons, shadowHosts, shadowTexts: shadowTexts.slice(0, 5), visible, size };
             });
-            if (probe.text.length > 0 || probe.buttons.length > 0) frameProbe.push({ url: fr.url().slice(0, 100), ...probe });
+            const consentish = /cookie|consent|souhlas|zgod|gdpr|privacy|soukrom/i.test(probe.text + ' ' + probe.shadowTexts.join(' '));
+            if (consentish || probe.shadowHosts > 0 || (fr === page.mainFrame())) frameProbe.push({ url: fr.url().slice(0, 100), ...probe });
           } catch {
             /* cross-process / detached frame */
           }

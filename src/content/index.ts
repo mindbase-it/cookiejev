@@ -127,15 +127,15 @@ async function handleDialog(state: PageState): Promise<boolean> {
     }
     const plan = res.plan;
     log('plan', plan);
+    // Report before acting: CMPs often remove this frame synchronously in the click handler, which
+    // destroys this script context before anything after the click can run.
+    lastSource = { state: 'handled', source: plan.source, confidence: plan.confidence, rounds: state.rounds, reason: plan.reason };
+    if (plan.steps.some((s) => s.type === 'click')) await report(lastSource);
     const exec = await executePlan(plan, map);
     for (const k of [...exec.clicked, ...exec.toggled]) {
       const e = snapshot.elements.find((x) => x.key === k);
       if (e) clickedThisDialog.add(`${e.kind}|${e.text}|${e.id}`);
     }
-    lastSource = { state: 'handled', source: plan.source, confidence: plan.confidence, rounds: state.rounds, reason: plan.reason };
-    // Report right away: CMPs often remove this frame the moment consent is saved, killing the script.
-    if (exec.clicked.length > 0 || exec.toggled.length > 0) await report(lastSource);
-
     await sleep(SETTLE_MS);
     const stillVisible = host.isConnected && isElementVisible(host);
     if (!stillVisible) {
@@ -176,6 +176,7 @@ function main(): void {
 
   const state: PageState = { busy: false, done: false, clicked: new Set(), rounds: 0, attempts: 0 };
   let timer: number | undefined;
+  let poll: number | undefined;
   let observer: MutationObserver | null = null;
   const startedAt = Date.now();
 
@@ -188,6 +189,7 @@ function main(): void {
       if (acted) {
         state.done = true;
         observer?.disconnect();
+        if (poll !== undefined) clearInterval(poll);
       }
     } catch (err) {
       log('error', err);
@@ -200,6 +202,7 @@ function main(): void {
     if (state.done) return;
     if (Date.now() - startedAt > OBSERVE_WINDOW_MS) {
       observer?.disconnect();
+      if (poll !== undefined) clearInterval(poll);
       return;
     }
     if (timer !== undefined) clearTimeout(timer);
@@ -232,9 +235,8 @@ function main(): void {
     // Observe the Document node itself: document.open()/write() (about:blank CMP frames) replaces documentElement.
     observer.observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'hidden', 'aria-hidden', 'open'] });
     void run();
-    // Late banners without DOM mutations we catch (e.g. CSS transitions).
-    window.setTimeout(schedule, 1500);
-    window.setTimeout(schedule, 5000);
+    // Mutations inside shadow trees and late CMP loads are invisible to the document observer: poll too.
+    poll = window.setInterval(schedule, 2000);
   })();
 }
 
