@@ -19,6 +19,8 @@ export interface ExtensionSession {
   openjevError(): Promise<string | null>;
   /** Engine diagnostics for the tab matching urlPattern (last snapshot + decision). */
   debug(urlPattern: string): Promise<unknown>;
+  /** Frames in which the content script started (frame-hello diagnostics). */
+  frames(urlPattern: string): Promise<Array<{ hostname: string; protocol: string; href: string; top: boolean }>>;
 }
 
 export interface LaunchOptions {
@@ -77,6 +79,15 @@ export async function launchExtension(settings: Partial<Settings> = {}, opts: La
       return r[`debug:${id}`] ?? null;
     }, urlPattern);
 
+  const frames = async (urlPattern: string) =>
+    worker.evaluate(async (pattern) => {
+      const tabs = await chrome.tabs.query({ url: pattern });
+      const id = tabs[0]?.id;
+      if (id === undefined) return [];
+      const r = await chrome.storage.session.get(`frames:${id}`);
+      return (r[`frames:${id}`] as Array<{ hostname: string; protocol: string; href: string; top: boolean }> | undefined) ?? [];
+    }, urlPattern);
+
   return {
     context,
     worker,
@@ -84,6 +95,7 @@ export async function launchExtension(settings: Partial<Settings> = {}, opts: La
     tabStatus,
     openjevError,
     debug,
+    frames,
     async close() {
       await context.close();
       await rm(userDataDir, { recursive: true, force: true }).catch(() => undefined);

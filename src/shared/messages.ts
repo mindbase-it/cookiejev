@@ -4,7 +4,9 @@ import type { ActionPlan, DialogSnapshot, TabStatus } from './types';
 export type ContentRequest =
   | { type: 'decide'; hostname: string; snapshot: DialogSnapshot }
   | { type: 'report'; hostname: string; status: TabStatus; planKey?: string }
-  | { type: 'is-host-enabled'; hostname: string };
+  | { type: 'is-host-enabled'; hostname: string }
+  /** Diagnostics: the content script started in this frame. */
+  | { type: 'frame-hello'; hostname: string; protocol: string; href: string; top: boolean };
 
 /** popup/options → background */
 export type UiRequest =

@@ -225,6 +225,7 @@ function main(): void {
       state.done = true;
       return;
     }
+    void sendToBackground({ type: 'frame-hello', hostname: pageHostname(), protocol: location.protocol, href: location.href.slice(0, 120), top: window.self === window.top }).catch(() => undefined);
     observer = new MutationObserver(schedule);
     // Observe the Document node itself: document.open()/write() (about:blank CMP frames) replaces documentElement.
     observer.observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'hidden', 'aria-hidden', 'open'] });

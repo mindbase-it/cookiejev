@@ -145,6 +145,15 @@ chrome.runtime.onMessage.addListener((msg: Request, sender, sendResponse) => {
       }
       case 'decide':
         return handleDecide(msg.hostname, msg.snapshot, tabId);
+      case 'frame-hello': {
+        if (tabId === undefined) return { ok: true };
+        const key = `frames:${tabId}`;
+        const r = await chrome.storage.session.get(key).catch(() => ({}) as Record<string, unknown>);
+        const list = Array.isArray(r[key]) ? (r[key] as unknown[]) : [];
+        list.push({ hostname: msg.hostname, protocol: msg.protocol, href: msg.href, top: msg.top, t: Date.now() });
+        await chrome.storage.session.set({ [key]: list.slice(-30) }).catch(() => undefined);
+        return { ok: true };
+      }
       case 'report': {
         const s = await loadSettings();
         if (tabId !== undefined) {
@@ -176,7 +185,7 @@ chrome.runtime.onMessage.addListener((msg: Request, sender, sendResponse) => {
 chrome.tabs.onUpdated.addListener((tabId, info) => {
   if (info.status === 'loading') {
     tabStatus.delete(tabId);
-    void chrome.storage.session.remove([`tab:${tabId}`, `debug:${tabId}`]).catch(() => undefined);
+    void chrome.storage.session.remove([`tab:${tabId}`, `debug:${tabId}`, `frames:${tabId}`]).catch(() => undefined);
     void chrome.action.setBadgeText({ tabId, text: '' }).catch(() => undefined);
   }
 });

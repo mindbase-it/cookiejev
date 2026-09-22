@@ -67,6 +67,8 @@ interface Row {
   frames?: string[];
   overlays?: string[];
   debug?: unknown;
+  /** Frames where the content script actually started. */
+  injected?: unknown;
 }
 
 /** Runs inside the page: lists iframes and visible fixed/sticky containers with a text preview. */
@@ -128,6 +130,7 @@ test.describe('real sites survey', () => {
         status = ((await ext.tabStatus(pattern)) as Record<string, unknown> | null) ?? status;
         const diag = await page.evaluate(pageDiagnostics).catch(() => ({ frames: [], overlays: [] }));
         const debug = await ext.debug(pattern).catch(() => null);
+        const injected = await ext.frames(pattern).catch(() => []);
         await page.screenshot({ path: `test-results/shots/${host}.png`, fullPage: false }).catch(() => undefined);
         row = {
           site,
@@ -139,6 +142,7 @@ test.describe('real sites survey', () => {
           frames: diag.frames,
           overlays: diag.overlays,
           debug,
+          injected,
         };
       } catch (err) {
         row = { site, state: 'error', reason: String(err).slice(0, 120), ms: Date.now() - t0 };

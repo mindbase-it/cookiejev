@@ -91,6 +91,10 @@ test.describe('with OpenJev mock available', () => {
   test('banner inside an about:blank iframe (Seznam-like) is rejected', async () => {
     const page = await ext.context.newPage();
     await page.goto(`${FIXTURES}/iframe-blank.html`);
+    await page.waitForTimeout(2500);
+    const frames = await ext.frames(`${FIXTURES}/iframe-blank.html`);
+    const debug = await ext.debug(`${FIXTURES}/iframe-blank.html`);
+    expect(frames, `content script must start in the about:blank frame; frames=${JSON.stringify(frames)} debug=${JSON.stringify(debug)}`).toContainEqual(expect.objectContaining({ protocol: 'about:', top: false }));
     await expect(page.locator('body')).toHaveAttribute('data-result', 'rejected', { timeout: 15_000 });
     await expect.poll(() => ext.tabStatus(`${FIXTURES}/iframe-blank.html`)).toMatchObject({ state: 'handled' });
     await page.close();
