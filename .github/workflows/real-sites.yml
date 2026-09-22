@@ -1,0 +1,29 @@
+name: Real sites survey
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'
+
+jobs:
+  survey:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test tests/e2e/real-sites.spec.ts --reporter=list
+        env:
+          REAL_SITES: '1'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: real-sites-report
+          path: |
+            test-results/real-sites.json
+            test-results/real-sites.md
