@@ -1,0 +1,41 @@
+:root {
+  --bg: #fffaf3;
+  --card: #fff;
+  --fg: #2b1d12;
+  --muted: #7a6656;
+  --accent: #b8722c;
+  --accent-fg: #fff;
+  --ok: #2e7d32;
+  --err: #c62828;
+  --border: #e8d9c6;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #1d1712; --card: #26201a; --fg: #f3e9dc; --muted: #b9a58f; --accent: #d99a4e; --accent-fg: #1d1712; --border: #3a2e24; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 680px; margin: 0 auto; padding: 24px 16px 48px; }
+header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+h1 { font-size: 20px; margin: 0; }
+fieldset { border: 1px solid var(--border); border-radius: 10px; background: var(--card); padding: 14px 16px; margin: 0 0 16px; }
+legend { font-weight: 600; padding: 0 6px; }
+label { display: block; margin: 6px 0; }
+label.field { display: grid; grid-template-columns: 180px 1fr; align-items: center; gap: 10px; }
+label.field > span:first-child { color: var(--muted); }
+input[type="url"], input[type="password"], textarea {
+  width: 100%; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--fg); font: inherit;
+}
+textarea { font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+.range { display: flex; align-items: center; gap: 10px; }
+.range input { flex: 1; }
+.help { color: var(--muted); margin: 4px 0 10px; font-size: 13px; }
+.row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.save-row { margin-top: 4px; }
+.privacy { margin-left: auto; color: var(--accent); font-size: 13px; }
+button { padding: 8px 14px; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent); color: var(--accent-fg); font: inherit; font-weight: 600; cursor: pointer; }
+button.secondary { background: transparent; color: var(--accent); }
+.result { font-size: 13px; color: var(--muted); }
+.result.ok { color: var(--ok); }
+.result.err { color: var(--err); }
+fieldset:disabled { opacity: .5; }

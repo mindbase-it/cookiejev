@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Newsletter modal, no cookies</title>
+<style>
+  #news { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); background: #fff; border: 1px solid #333; padding: 24px; z-index: 999; width: 360px; }
+</style></head>
+<body>
+<h1>Blog</h1>
+<div id="news" role="dialog" aria-label="Newsletter">
+  <h2>Join our newsletter</h2>
+  <p>Get the best recipes every week. No spam, ever.</p>
+  <button id="ok" onclick="done('newsletter-ok')">OK</button>
+  <button id="close" onclick="done('newsletter-closed')">No thanks</button>
+</div>
+<script>
+  function done(result) {
+    document.body.setAttribute('data-result', result);
+    document.getElementById('news').style.display = 'none';
+  }
+</script>
+</body>
+</html>

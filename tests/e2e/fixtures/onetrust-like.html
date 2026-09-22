@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="de">
+<head><meta charset="utf-8"><title>OneTrust-like</title>
+<style>
+  #onetrust-consent-sdk { position: fixed; bottom: 0; left: 0; right: 0; z-index: 2147483647; }
+  #onetrust-banner-sdk { background: #f2f2f2; padding: 16px; border-top: 2px solid #999; }
+  #onetrust-pc-sdk { display: none; background: #fff; padding: 16px; border: 1px solid #999; }
+  #onetrust-pc-sdk.show { display: block; }
+  .ot-switch { display: flex; justify-content: space-between; margin: 6px 0; }
+</style></head>
+<body>
+<h1>Beispielseite</h1>
+<div id="onetrust-consent-sdk">
+  <div id="onetrust-banner-sdk" role="region" aria-label="Cookie-Banner">
+    <p id="onetrust-policy-text">Wir verwenden Cookies, um Ihnen das beste Erlebnis zu bieten. Datenschutzerklärung.</p>
+    <button id="onetrust-pc-btn-handler" onclick="openPc()">Cookie-Einstellungen</button>
+    <button id="onetrust-accept-btn-handler" onclick="done('accepted')">Alle akzeptieren</button>
+  </div>
+  <div id="onetrust-pc-sdk" role="dialog" aria-modal="true">
+    <h2>Datenschutz-Präferenzcenter</h2>
+    <div class="ot-switch"><span class="ot-cat-header">Unbedingt erforderliche Cookies</span><span>Immer aktiv</span></div>
+    <div class="ot-switch"><label for="ot-group-id-C0002">Leistungs-Cookies</label><input type="checkbox" id="ot-group-id-C0002" role="switch" checked></div>
+    <div class="ot-switch"><label for="ot-group-id-C0004">Werbe-Cookies</label><input type="checkbox" id="ot-group-id-C0004" role="switch" checked></div>
+    <button class="ot-pc-refuse-all-handler" onclick="done('rejected')">Alle ablehnen</button>
+    <button class="save-preference-btn-handler onetrust-close-btn-handler" onclick="save()">Meine Auswahl bestätigen</button>
+  </div>
+</div>
+<script>
+  function openPc() {
+    document.getElementById('onetrust-banner-sdk').style.display = 'none';
+    document.getElementById('onetrust-pc-sdk').classList.add('show');
+  }
+  function done(result) {
+    document.body.setAttribute('data-result', result);
+    document.getElementById('onetrust-consent-sdk').style.display = 'none';
+  }
+  function save() {
+    const v = (id) => (document.getElementById(id).checked ? 'on' : 'off');
+    done('saved:perf=' + v('ot-group-id-C0002') + ',ads=' + v('ot-group-id-C0004'));
+  }
+</script>
+</body>
+</html>

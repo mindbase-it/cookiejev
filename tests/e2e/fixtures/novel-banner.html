@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Novel wording banner</title>
+<style>
+  .privacy-notice { position: fixed; bottom: 16px; right: 16px; width: 380px; background: #fafafa; border: 1px solid #ccc; padding: 18px; z-index: 5000; }
+  .privacy-notice button { margin-right: 6px; }
+</style></head>
+<body>
+<h1>Quirky startup</h1>
+<div class="privacy-notice">
+  <p>Heads up! We and our friends drop cookies for tracking and consent purposes. Cool with that?</p>
+  <button id="yes" onclick="done('accepted')">Sure, why not</button>
+  <button id="no" onclick="done('rejected')">Nope, I'm good</button>
+  <button id="tweak" onclick="done('tweak')">Tweak it</button>
+</div>
+<script>
+  function done(result) {
+    document.body.setAttribute('data-result', result);
+    document.querySelector('.privacy-notice').style.display = 'none';
+  }
+</script>
+</body>
+</html>

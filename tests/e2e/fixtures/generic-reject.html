@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Generic banner with reject</title>
+<style>
+  #cookie-banner { position: fixed; bottom: 0; left: 0; right: 0; background: #222; color: #fff; padding: 20px; z-index: 9999; }
+  #cookie-banner button { margin-right: 8px; padding: 8px 12px; }
+</style></head>
+<body>
+<h1>Welcome to the demo site</h1>
+<p>Lorem ipsum dolor sit amet.</p>
+<div id="cookie-banner" role="dialog" aria-label="Cookie consent">
+  <p>We use cookies to personalise content and ads and to analyse our traffic. See our <a href="/privacy.html">privacy policy</a>.</p>
+  <button id="accept" onclick="done('accepted')">Accept all</button>
+  <button id="settings" onclick="done('settings')">Cookie settings</button>
+  <button id="reject" onclick="done('rejected')">Reject all</button>
+</div>
+<script>
+  function done(result) {
+    document.body.setAttribute('data-result', result);
+    document.getElementById('cookie-banner').style.display = 'none';
+  }
+</script>
+</body>
+</html>

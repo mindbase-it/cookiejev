@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>CookieJev</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <img src="../icons/icon32.png" alt="" width="24" height="24" />
+      <h1 data-i18n="popupTitle">CookieJev</h1>
+      <label class="switch" title="">
+        <input type="checkbox" id="enabled" />
+        <span class="slider"></span>
+        <span class="switch-label" data-i18n="toggleEnabled">Enabled</span>
+      </label>
+    </header>
+
+    <section id="status" class="status">
+      <div id="status-icon" class="status-icon">…</div>
+      <div>
+        <div id="status-text" class="status-text"></div>
+        <div id="status-detail" class="status-detail"></div>
+      </div>
+    </section>
+
+    <dl class="meta">
+      <dt data-i18n="labelPolicy">Policy</dt>
+      <dd id="policy"></dd>
+    </dl>
+
+    <div class="actions">
+      <button id="rerun" data-i18n="btnRerun">Run again</button>
+      <button id="pause" class="secondary"></button>
+    </div>
+    <footer>
+      <a id="options" href="#" data-i18n="btnOptions">Settings</a>
+    </footer>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

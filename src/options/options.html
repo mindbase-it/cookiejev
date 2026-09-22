@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>CookieJev settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="../icons/icon48.png" alt="" width="36" height="36" />
+        <h1 data-i18n="optionsTitle">CookieJev settings</h1>
+      </header>
+
+      <form id="form">
+        <fieldset>
+          <legend data-i18n="sectionPolicy">Policy</legend>
+          <label><input type="radio" name="policy" value="reject_all" /> <span data-i18n="policyRejectAll"></span></label>
+          <label><input type="radio" name="policy" value="custom" /> <span data-i18n="policyCustom"></span></label>
+          <label><input type="radio" name="policy" value="accept_all" /> <span data-i18n="policyAcceptAll"></span></label>
+        </fieldset>
+
+        <fieldset id="categories">
+          <legend data-i18n="sectionCategories">Categories</legend>
+          <label><input type="checkbox" id="cat-analytics" /> <span data-i18n="catAnalytics"></span></label>
+          <label><input type="checkbox" id="cat-marketing" /> <span data-i18n="catMarketing"></span></label>
+          <label><input type="checkbox" id="cat-personalization" /> <span data-i18n="catPersonalization"></span></label>
+          <label><input type="checkbox" id="cat-functional" /> <span data-i18n="catFunctional"></span></label>
+        </fieldset>
+
+        <fieldset>
+          <legend data-i18n="sectionOpenJev">OpenJev</legend>
+          <p class="help" data-i18n="openjevHelp"></p>
+          <label><input type="checkbox" id="oj-enabled" /> <span data-i18n="openjevEnabled"></span></label>
+          <label class="field"><span data-i18n="openjevEndpoint"></span><input type="url" id="oj-endpoint" placeholder="http://127.0.0.1:3000" /></label>
+          <label class="field"><span data-i18n="openjevToken"></span><input type="password" id="oj-token" autocomplete="off" /></label>
+          <div class="row">
+            <button type="button" id="oj-test" class="secondary" data-i18n="btnTestConnection"></button>
+            <span id="oj-test-result" class="result"></span>
+          </div>
+          <label class="field"><span data-i18n="confidenceThreshold"></span>
+            <span class="range"><input type="range" id="threshold" min="0.3" max="0.95" step="0.05" /><output id="threshold-out"></output></span>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend data-i18n="sectionSites">Paused sites</legend>
+          <p class="help" data-i18n="sitesHelp"></p>
+          <textarea id="hosts" rows="4" spellcheck="false"></textarea>
+        </fieldset>
+
+        <fieldset>
+          <legend data-i18n="sectionMisc">Other</legend>
+          <label><input type="checkbox" id="badge" /> <span data-i18n="showBadge"></span></label>
+          <div class="row">
+            <button type="button" id="clear-cache" class="secondary" data-i18n="btnClearCache"></button>
+            <span id="cache-result" class="result"></span>
+          </div>
+        </fieldset>
+
+        <div class="row save-row">
+          <button type="submit" id="save" data-i18n="btnSave">Save</button>
+          <span id="save-result" class="result"></span>
+          <a class="privacy" href="https://github.com/mindbase-it/cookiejev/blob/main/docs/PRIVACY.md" target="_blank" rel="noopener" data-i18n="privacyLink"></a>
+        </div>
+      </form>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

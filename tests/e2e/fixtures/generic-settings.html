@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="cs">
+<head><meta charset="utf-8"><title>Banner s nastavením</title>
+<style>
+  #cc { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.6); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+  #cc .box { background: #fff; color: #000; padding: 24px; width: 420px; }
+  #panel { display: none; margin-top: 12px; }
+  #panel.open { display: block; }
+  .cat { display: flex; justify-content: space-between; margin: 6px 0; }
+</style></head>
+<body>
+<h1>Demo web</h1>
+<div id="cc">
+  <div class="box">
+    <h2>Používáme soubory cookie</h2>
+    <p>Kliknutím na „Přijmout vše" souhlasíte s ukládáním cookies. Své volby můžete upravit.</p>
+    <button id="accept" onclick="done('accepted')">Přijmout vše</button>
+    <button id="open" onclick="document.getElementById('panel').classList.add('open'); this.style.display='none'">Nastavení cookies</button>
+    <div id="panel">
+      <div class="cat"><label for="c-nec">Nezbytné cookies</label><input type="checkbox" id="c-nec" checked disabled></div>
+      <div class="cat"><label for="c-ana">Analytické cookies</label><input type="checkbox" id="c-ana" checked></div>
+      <div class="cat"><label for="c-mkt">Marketingové cookies</label><input type="checkbox" id="c-mkt" checked></div>
+      <div class="cat"><label for="c-fun">Funkční cookies</label><input type="checkbox" id="c-fun"></div>
+      <button id="save" onclick="save()">Uložit nastavení</button>
+    </div>
+  </div>
+</div>
+<script>
+  function done(result) {
+    document.body.setAttribute('data-result', result);
+    document.getElementById('cc').style.display = 'none';
+  }
+  function save() {
+    const v = (id) => (document.getElementById(id).checked ? 'on' : 'off');
+    done('saved:ana=' + v('c-ana') + ',mkt=' + v('c-mkt') + ',fun=' + v('c-fun'));
+  }
+</script>
+</body>
+</html>

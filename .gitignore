@@ -1,0 +1,10 @@
+node_modules/
+dist/
+release/
+playwright-report/
+test-results/
+.vitest/
+*.log
+.DS_Store
+Thumbs.db
+e2e-run.log
